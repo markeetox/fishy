@@ -5,6 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/map_layer_config.dart';
+import '../map_layers/map_layers_provider.dart';
+import '../map_layers/map_layers_sheet.dart';
+import '../map_layers/tide_providers.dart';
+import '../map_layers/tide_service.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
 
@@ -84,67 +89,343 @@ class _SpotsScreenState extends ConsumerState<SpotsScreen> {
   }
 }
 
-class _SpotsMapView extends StatelessWidget {
+class _SpotsMapView extends ConsumerStatefulWidget {
   final List<Spot> spots;
 
   const _SpotsMapView({required this.spots});
 
   @override
+  ConsumerState<_SpotsMapView> createState() => _SpotsMapViewState();
+}
+
+class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
+  LatLngBounds? _currentBounds;
+
+  void _openLayersSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => const MapLayersSheet(),
+    );
+  }
+
+  void _showTidePredictionDialog(TideStation station) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return _TidePredictionDialog(station: station);
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Default center to Miami, FL or first spot position
-    final initialCenter = spots.isNotEmpty
-        ? LatLng(spots.first.latitude, spots.first.longitude)
+    final activeLayers = ref.watch(activeMapLayersProvider);
+    final tideStationsAsync = ref.watch(tideStationsProvider);
+
+    final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
+    final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
+    final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
+
+    final initialCenter = widget.spots.isNotEmpty
+        ? LatLng(widget.spots.first.latitude, widget.spots.first.longitude)
         : const LatLng(25.7617, -80.1918);
 
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: initialCenter,
-        initialZoom: spots.isNotEmpty ? 10.0 : 9.0,
-      ),
+    ref.listen<AsyncValue<List<TideStation>>>(tideStationsProvider, (prev, next) {
+      if (next.hasError && showTides) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not load tide stations: ${next.error}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.onerevamp.seabound',
-        ),
-        MarkerLayer(
-          markers: spots.map((spot) {
-            return Marker(
-              point: LatLng(spot.latitude, spot.longitude),
-              width: 44.0,
-              height: 44.0,
-              child: GestureDetector(
-                onTap: () {
-                  context.push('/spots/${spot.id}');
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.place,
-                    color: Colors.white,
-                    size: 26,
-                  ),
+        FlutterMap(
+          options: MapOptions(
+            initialCenter: initialCenter,
+            initialZoom: widget.spots.isNotEmpty ? 10.0 : 9.0,
+            onMapReady: () {},
+            onPositionChanged: (position, hasGesture) {
+              if (position.bounds != null) {
+                setState(() {
+                  _currentBounds = position.bounds;
+                });
+              }
+            },
+          ),
+          children: [
+            // Base Tile Layer
+            TileLayer(
+              urlTemplate: MapLayerConfig.openStreetMapTileUrl,
+              userAgentPackageName: 'com.onerevamp.seabound',
+            ),
+
+            // Depth & Bathymetry Layer (GEBCO WMS + OpenSeaMap seamark overlay)
+            if (showDepth) ...[
+              TileLayer(
+                wmsOptions: WMSTileLayerOptions(
+                  baseUrl: MapLayerConfig.gebcoWmsUrl,
+                  layers: [MapLayerConfig.gebcoLayerName],
                 ),
+                tileProvider: NetworkTileProvider(),
+                opacity: 0.5,
               ),
-            );
-          }).toList(),
-        ),
-        RichAttributionWidget(
-          attributions: [
-            TextSourceAttribution(
-              'OpenStreetMap contributors',
-              onTap: () {},
+              TileLayer(
+                urlTemplate: MapLayerConfig.openSeaMapTileUrl,
+                userAgentPackageName: 'com.onerevamp.seabound',
+                opacity: 0.8,
+              ),
+            ],
+
+            // Weather Radar WMS Layer
+            if (showRadar)
+              TileLayer(
+                wmsOptions: WMSTileLayerOptions(
+                  baseUrl: MapLayerConfig.noaaNowCoastRadarWmsUrl,
+                  layers: [MapLayerConfig.noaaRadarLayerName],
+                  transparent: true,
+                  format: 'image/png',
+                ),
+                tileProvider: NetworkTileProvider(),
+                opacity: 0.6,
+              ),
+
+            // Tide Stations Marker Layer
+            if (showTides)
+              tideStationsAsync.when(
+                data: (stations) {
+                  final visibleStations = stations.where((station) {
+                    if (_currentBounds == null) return true;
+                    final point = LatLng(station.lat, station.lng);
+                    return _currentBounds!.contains(point);
+                  }).toList();
+
+                  return MarkerLayer(
+                    markers: visibleStations.map((station) {
+                      return Marker(
+                        point: LatLng(station.lat, station.lng),
+                        width: 32.0,
+                        height: 32.0,
+                        child: GestureDetector(
+                          onTap: () => _showTidePredictionDialog(station),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.tertiary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.5),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.waves,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
+            // Spot Markers Layer
+            MarkerLayer(
+              markers: widget.spots.map((spot) {
+                return Marker(
+                  point: LatLng(spot.latitude, spot.longitude),
+                  width: 44.0,
+                  height: 44.0,
+                  child: GestureDetector(
+                    onTap: () {
+                      context.push('/spots/${spot.id}');
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.place,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution(
+                  'OpenStreetMap & NOAA contributors',
+                  onTap: () {},
+                ),
+              ],
             ),
           ],
+        ),
+
+        // Layers Button Floating Control
+        Positioned(
+          top: 16,
+          right: 16,
+          child: FloatingActionButton.small(
+            heroTag: 'map_layers_fab',
+            onPressed: _openLayersSheet,
+            tooltip: 'Map Layers',
+            child: const Icon(Icons.layers_outlined),
+          ),
+        ),
+
+        // Disclaimer Badge Overlay
+        Positioned(
+          bottom: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black70,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              '⚠️ Not for navigation',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TidePredictionDialog extends ConsumerWidget {
+  final TideStation station;
+
+  const _TidePredictionDialog({required this.station});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final predictionsAsync =
+        ref.watch(stationPredictionsProvider(station.id));
+
+    return AlertDialog(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.waves,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  station.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          if (station.state.isNotEmpty)
+            Text(
+              'Station ID: ${station.id} (${station.state})',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+        ],
+      ),
+      content: SizedBox(
+        width: 320,
+        child: predictionsAsync.when(
+          data: (predictions) {
+            if (predictions.isEmpty) {
+              return const Text('No tide predictions available for today.');
+            }
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Today's High / Low Tides:",
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 12),
+                ...predictions.map((p) {
+                  final isHigh = p.type.toUpperCase() == 'H';
+                  final timeStr = DateFormat.jm().format(p.time);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isHigh
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 16,
+                              color: isHigh ? Colors.blue : Colors.orange,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isHigh ? 'High Tide' : 'Low Tide',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        Text('$timeStr (${p.value.toStringAsFixed(1)} ft)'),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, stack) => Text(
+            'Unable to fetch tide predictions: $error',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
         ),
       ],
     );

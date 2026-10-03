@@ -8,6 +8,8 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/spots/spots_screen.dart';
+import '../features/trips/trip_detail_screen.dart';
+import '../features/trips/trip_form_screen.dart';
 import '../features/trips/trips_screen.dart';
 import 'home_shell_screen.dart';
 
@@ -60,6 +62,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/trips',
                 builder: (context, state) => const TripsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'add',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const TripFormScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) {
+                      final tripId = state.pathParameters['id']!;
+                      return TripDetailScreen(tripId: tripId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) {
+                          final tripId = state.pathParameters['id']!;
+                          return TripFormScreen(tripId: tripId);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

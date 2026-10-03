@@ -7,6 +7,8 @@ import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/spots/spot_detail_screen.dart';
+import '../features/spots/spot_form_screen.dart';
 import '../features/spots/spots_screen.dart';
 import '../features/trips/trip_detail_screen.dart';
 import '../features/trips/trip_form_screen.dart';
@@ -95,6 +97,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/spots',
                 builder: (context, state) => const SpotsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'add',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const SpotFormScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) {
+                      final spotId = state.pathParameters['id']!;
+                      return SpotDetailScreen(spotId: spotId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) {
+                          final spotId = state.pathParameters['id']!;
+                          return SpotFormScreen(spotId: spotId);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

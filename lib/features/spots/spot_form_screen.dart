@@ -197,7 +197,7 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_errorMessage != null) ...[
                     Container(

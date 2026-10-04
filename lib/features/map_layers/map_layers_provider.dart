@@ -25,14 +25,14 @@ final availableLayers = [
   ),
 ];
 
-class ActiveMapLayersNotifier extends StateNotifier<Set<String>> {
-  ActiveMapLayersNotifier()
-      : super(
-          availableLayers
-              .where((layer) => layer.defaultOn)
-              .map((layer) => layer.id)
-              .toSet(),
-        );
+class ActiveMapLayersNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() {
+    return availableLayers
+        .where((layer) => layer.defaultOn)
+        .map((layer) => layer.id)
+        .toSet();
+  }
 
   void toggleLayer(String id) {
     if (state.contains(id)) {
@@ -46,6 +46,6 @@ class ActiveMapLayersNotifier extends StateNotifier<Set<String>> {
 }
 
 final activeMapLayersProvider =
-    StateNotifierProvider<ActiveMapLayersNotifier, Set<String>>((ref) {
+    NotifierProvider<ActiveMapLayersNotifier, Set<String>>(() {
   return ActiveMapLayersNotifier();
 });

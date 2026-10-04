@@ -152,11 +152,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             initialZoom: widget.spots.isNotEmpty ? 10.0 : 9.0,
             onMapReady: () {},
             onPositionChanged: (position, hasGesture) {
-              if (position.bounds != null) {
-                setState(() {
-                  _currentBounds = position.bounds;
-                });
-              }
+              setState(() {
+                _currentBounds = position.visibleBounds;
+              });
             },
           ),
           children: [
@@ -174,12 +172,12 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   layers: [MapLayerConfig.gebcoLayerName],
                 ),
                 tileProvider: NetworkTileProvider(),
-                opacity: 0.5,
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.5),
               ),
               TileLayer(
                 urlTemplate: MapLayerConfig.openSeaMapTileUrl,
                 userAgentPackageName: 'com.onerevamp.seabound',
-                opacity: 0.8,
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.8),
               ),
             ],
 
@@ -193,7 +191,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   format: 'image/png',
                 ),
                 tileProvider: NetworkTileProvider(),
-                opacity: 0.6,
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
               ),
 
             // Tide Stations Marker Layer
@@ -306,7 +304,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.black70,
+              color: Colors.black87,
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Text(

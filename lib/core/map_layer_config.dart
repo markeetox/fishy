@@ -12,12 +12,12 @@ class MapLayerConfig {
       'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png';
 
   static const String gebcoWmsUrl =
-      'https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?';
+      'https://wms.gebco.net/mapserv?';
 
   static const String gebcoLayerName = 'GEBCO_LATEST';
 
   static const String noaaNowCoastRadarWmsUrl =
-      'https://nowcoast.noaa.gov/geoserver/observations/weather_radar/ows?';
+      'https://nowcoast.noaa.gov/geoserver/observations/weather_radar/wms?';
 
   static const String noaaRadarLayerName =
       'conus_bref_qct';

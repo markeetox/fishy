@@ -2,6 +2,7 @@ class MapLayerConfig {
   // Layer IDs
   static const String tideStationsId = 'tide_stations';
   static const String depthBathymetryId = 'depth_bathymetry';
+  static const String depthNumbersId = 'depth_numbers';
   static const String weatherRadarId = 'weather_radar';
 
   // URLs
@@ -14,7 +15,12 @@ class MapLayerConfig {
   static const String gebcoWmsUrl =
       'https://wms.gebco.net/mapserv?';
 
-  static const String gebcoLayerName = 'GEBCO_LATEST';
+  static const String gebcoLayerName = 'GEBCO_LATEST_2';
+
+  static const String noaaChartDisplayWmsUrl =
+      'https://gis.charttools.noaa.gov/arcgis/rest/services/MCS/NOAAChartDisplay/MapServer/exts/MaritimeChartService/WMSServer?';
+
+  static const String noaaSoundingsLayerName = '0,1,2,3';
 
   static const String noaaNowCoastRadarWmsUrl =
       'https://nowcoast.noaa.gov/geoserver/observations/weather_radar/ows?';

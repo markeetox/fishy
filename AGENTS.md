@@ -7,3 +7,4 @@
 - **Package Selection**: Avoid adding packages or dependencies that do not support web or mobile platforms.
 - **Responsive Layouts**: Layouts must be responsive and function seamlessly on phone-sized screens as well as web browsers.
 - **Pre-PR Verification**: Always run `flutter analyze` and `flutter test` before submitting code changes or opening a pull request. Fix all static analysis errors, warnings, and failing tests.
+- **CrossAxisAlignment Naming**: The class is CrossAxisAlignment, never CrossAlignment. Before opening a pull request, run flutter analyze and flutter build web --release and paste the real output in the PR description.

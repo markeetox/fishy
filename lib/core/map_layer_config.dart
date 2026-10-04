@@ -17,10 +17,10 @@ class MapLayerConfig {
   static const String gebcoLayerName = 'GEBCO_LATEST';
 
   static const String noaaNowCoastRadarWmsUrl =
-      'https://nowcoast.noaa.gov/geoserver/observations/weather_radar/wms?';
+      'https://nowcoast.noaa.gov/geoserver/observations/weather_radar/ows?';
 
   static const String noaaRadarLayerName =
-      'conus_bref_qct';
+      'conus_base_reflectivity_mosaic';
 
   static const String noaaTideStationsUrl =
       'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions';

@@ -260,7 +260,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_) => const SizedBox.shrink(),
               ),
 
             // Spot Markers Layer
@@ -577,7 +577,7 @@ class _SpotsListView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

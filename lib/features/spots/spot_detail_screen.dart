@@ -96,7 +96,7 @@ class SpotDetailScreen extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_) => const SizedBox.shrink(),
+            error: (error, stackTrace) => const SizedBox.shrink(),
           ),
         ],
       ),

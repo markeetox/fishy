@@ -13,8 +13,14 @@ final availableLayers = [
   ),
   const MapLayerItem(
     id: MapLayerConfig.depthBathymetryId,
-    displayName: 'Depth & Nautical Chart',
-    icon: Icons.sailing,
+    displayName: 'Depth & Bathymetry',
+    icon: Icons.water,
+    defaultOn: false,
+  ),
+  const MapLayerItem(
+    id: MapLayerConfig.depthNumbersId,
+    displayName: 'Depth Numbers (NOAA Soundings)',
+    icon: Icons.pin_drop_outlined,
     defaultOn: false,
   ),
   const MapLayerItem(

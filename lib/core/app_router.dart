@@ -6,6 +6,7 @@ import '../features/alerts/alerts_screen.dart';
 import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
+import '../features/profile/about_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/spots/spot_detail_screen.dart';
 import '../features/spots/spot_form_screen.dart';
@@ -53,6 +54,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/about',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AboutScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/map_layer_config.dart';
+import '../../core/navigation_disclaimer.dart';
 import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';
 import '../map_layers/tide_providers.dart';
@@ -24,6 +25,14 @@ class SpotsScreen extends ConsumerStatefulWidget {
 
 class _SpotsScreenState extends ConsumerState<SpotsScreen> {
   ViewMode _selectedView = ViewMode.map;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NavigationDisclaimer.showFirstLaunchDialogIfNeeded(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +136,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
+    final showSoundings = activeLayers.contains(MapLayerConfig.depthNumbersId);
     final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
 
     final initialCenter = widget.spots.isNotEmpty
@@ -164,7 +174,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               userAgentPackageName: 'com.onerevamp.seabound',
             ),
 
-            // Depth & Bathymetry Layer (GEBCO WMS + OpenSeaMap seamark overlay)
+            // Depth & Bathymetry Layer (GEBCO colour-shaded WMS + OpenSeaMap seamarks)
             if (showDepth) ...[
               TileLayer(
                 wmsOptions: WMSTileLayerOptions(
@@ -172,7 +182,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   layers: [MapLayerConfig.gebcoLayerName],
                 ),
                 tileProvider: NetworkTileProvider(),
-                tileDisplay: const TileDisplay.instantaneous(opacity: 0.5),
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
               ),
               TileLayer(
                 urlTemplate: MapLayerConfig.openSeaMapTileUrl,
@@ -180,6 +190,19 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.8),
               ),
             ],
+
+            // Depth Numbers (NOAA Soundings) WMS Layer
+            if (showSoundings)
+              TileLayer(
+                wmsOptions: WMSTileLayerOptions(
+                  baseUrl: MapLayerConfig.noaaChartDisplayWmsUrl,
+                  layers: MapLayerConfig.noaaSoundingsLayerName.split(','),
+                  transparent: true,
+                  format: 'image/png',
+                ),
+                tileProvider: NetworkTileProvider(),
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.85),
+              ),
 
             // Weather Radar WMS Layer
             if (showRadar)
@@ -285,6 +308,62 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
+        // Depth Color Legend Widget when Depth Layer is active
+        if (showDepth)
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Elevation / Depth',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 110,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF000055), // Deep Ocean
+                          Color(0xFF0066CC), // Shallow Water
+                          Color(0xFF66CCFF), // Near Shore
+                          Color(0xFF009933), // Lowland
+                          Color(0xFF996633), // Highlands
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const SizedBox(
+                    width: 110,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Deep', style: TextStyle(color: Colors.white70, fontSize: 9)),
+                        Text('High', style: TextStyle(color: Colors.white70, fontSize: 9)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         // Layers Button Floating Control
         Positioned(
           top: 16,
@@ -297,22 +376,24 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ),
         ),
 
-        // Disclaimer Badge Overlay
+        // Low-contrast Disclaimer Banner along bottom edge
         Positioned(
-          bottom: 12,
-          left: 12,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              '⚠️ Not for navigation',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: () => NavigationDisclaimer.showFullDisclaimerDialog(context),
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              child: const Text(
+                'Not for navigation. Tap for details.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
           ),
@@ -496,7 +577,7 @@ class _SpotsListView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

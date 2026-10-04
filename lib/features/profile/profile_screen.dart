@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../auth/auth_providers.dart';
 
@@ -59,6 +60,14 @@ class ProfileScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.push('/about');
+                },
+                icon: const Icon(Icons.info_outline),
+                label: const Text('About & Data Sources'),
+              ),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () async {
                   final authRepo = ref.read(authRepositoryProvider);

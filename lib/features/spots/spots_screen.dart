@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
+import '../map/location_providers.dart';
 import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';
 import '../map_layers/tide_providers.dart';
@@ -76,7 +78,7 @@ class _SpotsScreenState extends ConsumerState<SpotsScreen> {
           }
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
+        error: (error, stackTrace) => Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -108,7 +110,9 @@ class _SpotsMapView extends ConsumerStatefulWidget {
 }
 
 class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
+  final MapController _mapController = MapController();
   LatLngBounds? _currentBounds;
+  bool _isLocating = false;
 
   void _openLayersSheet() {
     showModalBottomSheet(
@@ -129,10 +133,40 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     );
   }
 
+  Future<void> _centerOnMyLocation() async {
+    setState(() {
+      _isLocating = true;
+    });
+
+    try {
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentPosition();
+      final userLatLng = LatLng(position.latitude, position.longitude);
+
+      _mapController.move(userLatLng, 13.0);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeLayers = ref.watch(activeMapLayersProvider);
     final tideStationsAsync = ref.watch(tideStationsProvider);
+    final userPositionAsync = ref.watch(userPositionStreamProvider);
 
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
@@ -154,9 +188,14 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
       }
     });
 
+    final Position? userPos = userPositionAsync.asData?.value;
+    final LatLng? userLatLng =
+        userPos != null ? LatLng(userPos.latitude, userPos.longitude) : null;
+
     return Stack(
       children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: initialCenter,
             initialZoom: widget.spots.isNotEmpty ? 10.0 : 9.0,
@@ -216,6 +255,45 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
               ),
+
+            // User Position Accuracy Circle & Marker Layer
+            if (userLatLng != null) ...[
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: userLatLng,
+                    radius: (userPos?.accuracy ?? 15.0).clamp(10.0, 100.0),
+                    useRadiusInMeter: true,
+                    color: Colors.blue.withValues(alpha: 0.2),
+                    borderColor: Colors.blue.withValues(alpha: 0.6),
+                    borderStrokeWidth: 1.5,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: userLatLng,
+                    width: 22.0,
+                    height: 22.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade600,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black38,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             // Tide Stations Marker Layer
             if (showTides)
@@ -364,15 +442,32 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Layers Button Floating Control
+        // Map Control FABs: Layers & My Location
         Positioned(
           top: 16,
           right: 16,
-          child: FloatingActionButton.small(
-            heroTag: 'map_layers_fab',
-            onPressed: _openLayersSheet,
-            tooltip: 'Map Layers',
-            child: const Icon(Icons.layers_outlined),
+          child: Column(
+            children: [
+              FloatingActionButton.small(
+                heroTag: 'map_layers_fab',
+                onPressed: _openLayersSheet,
+                tooltip: 'Map Layers',
+                child: const Icon(Icons.layers_outlined),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton.small(
+                heroTag: 'map_my_location_fab',
+                onPressed: _isLocating ? null : _centerOnMyLocation,
+                tooltip: 'My Location',
+                child: _isLocating
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+              ),
+            ],
           ),
         ),
 
@@ -495,7 +590,7 @@ class _TidePredictionDialog extends ConsumerWidget {
             padding: EdgeInsets.all(24.0),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, stack) => Text(
+          error: (error, stackTrace) => Text(
             'Unable to fetch tide predictions: $error',
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),

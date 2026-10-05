@@ -34,6 +34,14 @@ class AboutScreen extends StatelessWidget {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.tsunami),
+                          title: Text('Open-Meteo / DWD'),
+                          subtitle: Text(
+                              'Global Marine Waves & Swell Forecast API (wave height, period, direction)'),
+                        ),
+                        Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
                           leading: Icon(Icons.water_outlined),
                           title: Text('GEBCO'),
                           subtitle: Text(

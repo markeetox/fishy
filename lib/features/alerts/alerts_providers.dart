@@ -40,46 +40,43 @@ class AlertsState {
   }
 }
 
-class AlertsNotifier extends StateNotifier<AlertsState> {
-  final AlertsRepository _repository;
-  final Ref _ref;
-
+class AlertsNotifier extends Notifier<AlertsState> {
   Timer? _periodicTimer;
   AppLifecycleListener? _lifecycleListener;
   LatLng? _lastQueryPoint;
 
-  AlertsNotifier(this._repository, this._ref) : super(const AlertsState()) {
-    _initAutoRefresh();
-  }
-
-  void _initAutoRefresh() {
-    // 1. Periodic 5 minute timer
+  @override
+  AlertsState build() {
     _periodicTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       refreshAlerts();
     });
 
-    // 2. App lifecycle listener (refresh when returning to foreground)
     _lifecycleListener = AppLifecycleListener(
       onResume: () {
         refreshAlerts();
       },
     );
 
-    // Initial query
-    refreshAlerts();
+    ref.onDispose(() {
+      _periodicTimer?.cancel();
+      _lifecycleListener?.dispose();
+    });
+
+    Future.microtask(() => refreshAlerts());
+
+    return const AlertsState();
   }
 
   Future<void> refreshAlerts() async {
-    // Determine query position: Live position if permitted/available, else map default center (Miami, FL)
     LatLng queryPoint = const LatLng(25.7617, -80.1918);
 
     try {
-      final userPosAsync = _ref.read(userPositionStreamProvider);
+      final userPosAsync = ref.read(userPositionStreamProvider);
       final Position? pos = userPosAsync.asData?.value;
       if (pos != null) {
         queryPoint = LatLng(pos.latitude, pos.longitude);
       } else {
-        final locationService = _ref.read(locationServiceProvider);
+        final locationService = ref.read(locationServiceProvider);
         final permission = await locationService.checkPermission();
         if (permission == LocationPermission.whileInUse ||
             permission == LocationPermission.always) {
@@ -114,8 +111,10 @@ class AlertsNotifier extends StateNotifier<AlertsState> {
   Future<void> fetchAlertsForPoint(double lat, double lon) async {
     state = state.copyWith(isLoading: true);
 
+    final repository = ref.read(alertsRepositoryProvider);
+
     try {
-      final alerts = await _repository.fetchActiveAlerts(lat, lon);
+      final alerts = await repository.fetchActiveAlerts(lat, lon);
       state = AlertsState(
         alerts: alerts,
         lastChecked: DateTime.now(),
@@ -142,13 +141,6 @@ class AlertsNotifier extends StateNotifier<AlertsState> {
       }
     }
   }
-
-  @override
-  void dispose() {
-    _periodicTimer?.cancel();
-    _lifecycleListener?.dispose();
-    super.dispose();
-  }
 }
 
 final alertsRepositoryProvider = Provider<AlertsRepository>((ref) {
@@ -156,7 +148,4 @@ final alertsRepositoryProvider = Provider<AlertsRepository>((ref) {
 });
 
 final alertsNotifierProvider =
-    StateNotifierProvider<AlertsNotifier, AlertsState>((ref) {
-  final repository = ref.watch(alertsRepositoryProvider);
-  return AlertsNotifier(repository, ref);
-});
+    NotifierProvider<AlertsNotifier, AlertsState>(AlertsNotifier.new);

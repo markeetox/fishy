@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart';
 import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
 import '../alerts/alerts_providers.dart';
-import '../alerts/weather_alert_model.dart';
 import '../map/location_providers.dart';
 import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';

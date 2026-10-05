@@ -58,7 +58,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         final badgeService = ref.read(badgeServiceProvider);
-        await badgeService.onProfileUpdated(context);
+        final result = await badgeService.onProfileUpdated();
+        if (mounted) {
+          showBadgeUnlocks(context, result);
+        }
       }
 
       if (mounted) {

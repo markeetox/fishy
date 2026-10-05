@@ -19,8 +19,10 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(badgeServiceProvider).onAlertsOpened(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final result = await ref.read(badgeServiceProvider).onAlertsOpened();
+      if (!mounted) return;
+      showBadgeUnlocks(context, result);
     });
   }
 

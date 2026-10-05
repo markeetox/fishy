@@ -147,8 +147,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
       _mapController.move(userLatLng, 13.0);
 
+      final result = await ref.read(badgeServiceProvider).onMyLocationTapped();
       if (mounted) {
-        ref.read(badgeServiceProvider).onMyLocationTapped(context);
+        showBadgeUnlocks(context, result);
       }
     } catch (e) {
       if (mounted) {

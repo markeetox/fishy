@@ -36,9 +36,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await repository.removeEmailFromUserDoc(user.uid);
 
       // Check badge qualifications
+      final badgeService = ref.read(badgeServiceProvider);
+      final result = await badgeService.checkAllBadges();
+
       if (mounted) {
-        final badgeService = ref.read(badgeServiceProvider);
-        await badgeService.checkAllBadges(context);
+        showBadgeUnlocks(context, result);
       }
     }
   }

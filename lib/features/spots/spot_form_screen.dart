@@ -153,11 +153,13 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
 
         await repository.createSpot(newSpot);
 
+        final badgeService = ref.read(badgeServiceProvider);
+        final spots = await repository.getAllSpotsOnce();
+        final userSpotsCount = spots.where((s) => s.userId == userId).length;
+        final result = await badgeService.onSpotShared(userId, userSpotsCount);
+
         if (mounted) {
-          final badgeService = ref.read(badgeServiceProvider);
-          final spots = await repository.getAllSpotsOnce();
-          final userSpotsCount = spots.where((s) => s.userId == userId).length;
-          await badgeService.onSpotShared(context, userId, userSpotsCount);
+          showBadgeUnlocks(context, result);
         }
       }
 

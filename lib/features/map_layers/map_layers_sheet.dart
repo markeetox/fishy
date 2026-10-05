@@ -50,10 +50,14 @@ class MapLayersSheet extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 value: isEnabled,
-                onChanged: (_) {
+                onChanged: (_) async {
                   activeNotifier.toggleLayer(layer.id);
                   if (!isEnabled && layer.id == 'depth_bathymetry') {
-                    ref.read(badgeServiceProvider).onDepthLayerToggled(context);
+                    final result = await ref
+                        .read(badgeServiceProvider)
+                        .onDepthLayerToggled();
+                    if (!context.mounted) return;
+                    showBadgeUnlocks(context, result);
                   }
                 },
               );

@@ -106,10 +106,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         );
         await repository.createTrip(newTrip);
 
+        final badgeService = ref.read(badgeServiceProvider);
+        final trips = await repository.getTripsOnce(userId);
+        final result = await badgeService.onTripLogged(userId, trips.length);
+
         if (mounted) {
-          final badgeService = ref.read(badgeServiceProvider);
-          final trips = await repository.getTripsOnce(userId);
-          await badgeService.onTripLogged(context, userId, trips.length);
+          showBadgeUnlocks(context, result);
         }
       }
 

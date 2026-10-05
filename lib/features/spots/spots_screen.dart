@@ -8,6 +8,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
+import '../alerts/alerts_providers.dart';
+import '../alerts/weather_alert_model.dart';
 import '../map/location_providers.dart';
 import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';
@@ -167,6 +169,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final activeLayers = ref.watch(activeMapLayersProvider);
     final tideStationsAsync = ref.watch(tideStationsProvider);
     final userPositionAsync = ref.watch(userPositionStreamProvider);
+    final alertsState = ref.watch(alertsNotifierProvider);
 
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
@@ -191,6 +194,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final Position? userPos = userPositionAsync.asData?.value;
     final LatLng? userLatLng =
         userPos != null ? LatLng(userPos.latitude, userPos.longitude) : null;
+
+    final mostSevereAlert =
+        alertsState.alerts.isNotEmpty ? alertsState.alerts.first : null;
 
     return Stack(
       children: [
@@ -386,10 +392,58 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
+        // Slim Weather Alert Banner Overlay at top of map
+        if (mostSevereAlert != null)
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 68, // Leave room for top-right FAB controls
+            child: GestureDetector(
+              onTap: () {
+                context.go('/alerts');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _alertSeverityColor(mostSevereAlert.severity),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${mostSevereAlert.event} (${mostSevereAlert.severity})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right,
+                        color: Colors.white, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         // Depth Color Legend Widget when Depth Layer is active
         if (showDepth)
           Positioned(
-            top: 16,
+            top: mostSevereAlert != null ? 58 : 16,
             left: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -495,6 +549,21 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         ),
       ],
     );
+  }
+
+  Color _alertSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'extreme':
+        return Colors.red.shade900;
+      case 'severe':
+        return Colors.red.shade700;
+      case 'moderate':
+        return Colors.orange.shade900;
+      case 'minor':
+        return Colors.amber.shade900;
+      default:
+        return Colors.blueGrey.shade800;
+    }
   }
 }
 

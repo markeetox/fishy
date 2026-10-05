@@ -4,11 +4,25 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 import '../map/location_providers.dart';
+import '../profile/badge_service.dart';
 import 'alerts_providers.dart';
 import 'weather_alert_model.dart';
 
-class AlertsScreen extends ConsumerWidget {
+class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});
+
+  @override
+  ConsumerState<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+class _AlertsScreenState extends ConsumerState<AlertsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(badgeServiceProvider).onAlertsOpened(context);
+    });
+  }
 
   void _showAlertDetail(BuildContext context, WeatherAlert alert) {
     showDialog(
@@ -96,7 +110,7 @@ class AlertsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final alertsState = ref.watch(alertsNotifierProvider);
     final alertsNotifier = ref.read(alertsNotifierProvider.notifier);
 

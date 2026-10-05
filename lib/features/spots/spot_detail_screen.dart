@@ -136,11 +136,18 @@ class SpotDetailScreen extends ConsumerWidget {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          'Shared by ${spot.authorName}',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
+                        InkWell(
+                          onTap: spot.userId.isNotEmpty
+                              ? () => context.push('/profile/user/${spot.userId}')
+                              : null,
+                          borderRadius: BorderRadius.circular(4),
+                          child: Text(
+                            'Shared by ${spot.authorName}',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Icon(

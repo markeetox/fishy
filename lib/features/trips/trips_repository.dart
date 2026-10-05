@@ -23,6 +23,13 @@ class TripsRepository {
     });
   }
 
+  Future<List<Trip>> getTripsOnce(String userId) async {
+    final snap = await _tripsRef
+        .where('userId', isEqualTo: userId)
+        .get();
+    return snap.docs.map((doc) => Trip.fromMap(doc.data(), doc.id)).toList();
+  }
+
   Stream<Trip?> getTripByIdStream(String tripId) {
     return _tripsRef.doc(tripId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) return null;

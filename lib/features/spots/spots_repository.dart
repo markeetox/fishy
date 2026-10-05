@@ -22,6 +22,11 @@ class SpotsRepository {
     });
   }
 
+  Future<List<Spot>> getAllSpotsOnce() async {
+    final snap = await _spotsRef.get();
+    return snap.docs.map((doc) => Spot.fromMap(doc.data(), doc.id)).toList();
+  }
+
   Stream<Spot?> getSpotByIdStream(String spotId) {
     return _spotsRef.doc(spotId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) return null;

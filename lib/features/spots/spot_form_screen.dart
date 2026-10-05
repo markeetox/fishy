@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../auth/auth_providers.dart';
+import '../map/location_providers.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
 
@@ -24,11 +25,13 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _speciesTextController = TextEditingController();
+  final MapController _mapController = MapController();
 
   LatLng? _pinnedLocation;
   final List<String> _speciesList = [];
 
   bool _isSaving = false;
+  bool _isLocating = false;
   bool _isLoaded = false;
   String? _errorMessage;
 
@@ -66,12 +69,43 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
     _isLoaded = true;
   }
 
+  Future<void> _useCurrentLocation() async {
+    setState(() {
+      _isLocating = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentPosition();
+      final userLatLng = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _pinnedLocation = userLatLng;
+      });
+
+      _mapController.move(userLatLng, 13.0);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
   Future<void> _saveSpot(String userId, String? userDisplayName) async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_pinnedLocation == null) {
       setState(() {
-        _errorMessage = 'Please tap on the map to set a location pin.';
+        _errorMessage = 'Please tap on the map or use your location to set a pin.';
       });
       return;
     }
@@ -182,7 +216,6 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
 
   Widget _buildFormScaffold(
       BuildContext context, String userId, String? userDisplayName) {
-    // Default map center: Miami, FL (25.7617, -80.1918)
     final initialMapCenter = _pinnedLocation ?? const LatLng(25.7617, -80.1918);
 
     return Scaffold(
@@ -288,28 +321,38 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
                         'Location Pin *',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      if (_pinnedLocation != null)
-                        Text(
-                          '${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        )
-                      else
-                        Text(
-                          'Tap map to place pin',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
+                      OutlinedButton.icon(
+                        onPressed: _isLocating ? null : _useCurrentLocation,
+                        icon: _isLocating
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.my_location, size: 16),
+                        label: const Text('Use my current location'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
                         ),
+                      ),
                     ],
                   ),
+                  if (_pinnedLocation != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Pinned: ${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox(
                       height: 280,
                       child: FlutterMap(
+                        mapController: _mapController,
                         options: MapOptions(
                           initialCenter: initialMapCenter,
                           initialZoom: _pinnedLocation != null ? 12.0 : 9.0,

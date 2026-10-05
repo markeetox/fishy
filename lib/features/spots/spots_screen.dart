@@ -14,6 +14,7 @@ import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';
 import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
+import '../profile/badge_service.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
 
@@ -145,6 +146,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
       final userLatLng = LatLng(position.latitude, position.longitude);
 
       _mapController.move(userLatLng, 13.0);
+
+      final result = await ref.read(badgeServiceProvider).onMyLocationTapped();
+      if (mounted) {
+        showBadgeUnlocks(context, result);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -764,21 +770,29 @@ class _SpotsListView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'By ${spot.authorName}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                      ),
-                    ],
+                  InkWell(
+                    onTap: spot.userId.isNotEmpty
+                        ? () => context.push('/profile/user/${spot.userId}')
+                        : null,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_outline,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'By ${spot.authorName}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (spot.description.isNotEmpty) ...[
                     const SizedBox(height: 8),

@@ -7,7 +7,9 @@ import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/profile/about_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/profile/public_profile_screen.dart';
 import '../features/spots/spot_detail_screen.dart';
 import '../features/spots/spot_form_screen.dart';
 import '../features/spots/spots_screen.dart';
@@ -59,6 +61,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/about',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/user/:uid',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final uid = state.pathParameters['uid']!;
+          return PublicProfileScreen(userId: uid);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

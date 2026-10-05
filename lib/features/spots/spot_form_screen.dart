@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../auth/auth_providers.dart';
 import '../map/location_providers.dart';
+import '../profile/badge_service.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
 
@@ -151,6 +152,15 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
         );
 
         await repository.createSpot(newSpot);
+
+        final badgeService = ref.read(badgeServiceProvider);
+        final spots = await repository.getAllSpotsOnce();
+        final userSpotsCount = spots.where((s) => s.userId == userId).length;
+        final result = await badgeService.onSpotShared(userId, userSpotsCount);
+
+        if (mounted) {
+          showBadgeUnlocks(context, result);
+        }
       }
 
       if (mounted) {

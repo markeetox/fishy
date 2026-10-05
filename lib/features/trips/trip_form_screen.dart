@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../auth/auth_providers.dart';
+import '../profile/badge_service.dart';
 import 'trip_model.dart';
 import 'trips_providers.dart';
 
@@ -104,6 +105,14 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           notes: _notesController.text.trim(),
         );
         await repository.createTrip(newTrip);
+
+        final badgeService = ref.read(badgeServiceProvider);
+        final trips = await repository.getTripsOnce(userId);
+        final result = await badgeService.onTripLogged(userId, trips.length);
+
+        if (mounted) {
+          showBadgeUnlocks(context, result);
+        }
       }
 
       if (mounted) {

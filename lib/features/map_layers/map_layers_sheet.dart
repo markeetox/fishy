@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../profile/badge_service.dart';
 import 'map_layers_provider.dart';
 
 class MapLayersSheet extends ConsumerWidget {
@@ -49,8 +50,15 @@ class MapLayersSheet extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 value: isEnabled,
-                onChanged: (_) {
+                onChanged: (_) async {
                   activeNotifier.toggleLayer(layer.id);
+                  if (!isEnabled && layer.id == 'depth_bathymetry') {
+                    final result = await ref
+                        .read(badgeServiceProvider)
+                        .onDepthLayerToggled();
+                    if (!context.mounted) return;
+                    showBadgeUnlocks(context, result);
+                  }
                 },
               );
             }),

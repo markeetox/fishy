@@ -39,9 +39,10 @@ class AuthRepository {
       final uid = credential.user!.uid;
       await _firebaseAuth.currentUser?.updateDisplayName(displayName);
 
+      // Do NOT store email in the public user document
       await _firestore.collection('users').doc(uid).set({
-        'displayName': displayName,
-        'email': email,
+        'username': displayName,
+        'usernameLower': displayName.toLowerCase(),
         'createdAt': FieldValue.serverTimestamp(),
       });
     }

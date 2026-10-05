@@ -9,3 +9,7 @@
 - **Pre-PR Verification**: Always run `flutter analyze` and `flutter test` before submitting code changes or opening a pull request. Fix all static analysis errors, warnings, and failing tests.
 - **Location Sensitivity**: Location data is sensitive: never log or upload it without explicit user action. In AsyncValue.when, the error callback takes two parameters (error, stackTrace). The class is CrossAxisAlignment.
 - **Riverpod 3 Usage**: Riverpod 3 is used. Never use StateNotifier, StateNotifierProvider, or StateProvider. Use Notifier / AsyncNotifier with NotifierProvider / AsyncNotifierProvider.
+- **Profile & Gamification Guidelines**:
+  - Never store user email addresses in Firestore `users/{uid}` documents.
+  - Usernames must be validated using `Catalog.validateUsername()` (3-20 chars, alphanumeric + underscores, blocklist check) and claimed via Firestore transaction in `/usernames/{username}`.
+  - Badges are awarded atomically using `BadgeService.awardBadge()` in `users/{uid}/badges/{badgeId}`.

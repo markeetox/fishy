@@ -12,6 +12,12 @@ final availableLayers = [
     defaultOn: true,
   ),
   const MapLayerItem(
+    id: MapLayerConfig.wavesId,
+    displayName: 'Waves (Open-Meteo)',
+    icon: Icons.tsunami,
+    defaultOn: false,
+  ),
+  const MapLayerItem(
     id: MapLayerConfig.depthBathymetryId,
     displayName: 'Depth & Bathymetry',
     icon: Icons.water,

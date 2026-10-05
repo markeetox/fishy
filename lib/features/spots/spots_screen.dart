@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,8 @@ import '../map_layers/map_layers_provider.dart';
 import '../map_layers/map_layers_sheet.dart';
 import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
+import '../map_layers/waves_provider.dart';
+import '../map_layers/waves_service.dart';
 import '../profile/badge_service.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
@@ -114,7 +117,18 @@ class _SpotsMapView extends ConsumerStatefulWidget {
 class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
   final MapController _mapController = MapController();
   LatLngBounds? _currentBounds;
+  double _currentZoom = 9.0;
   bool _isLocating = false;
+
+  Timer? _wavesDebounceTimer;
+  List<WavePointData>? _wavesData;
+  String? _wavesError;
+
+  @override
+  void dispose() {
+    _wavesDebounceTimer?.cancel();
+    super.dispose();
+  }
 
   void _openLayersSheet() {
     showModalBottomSheet(
@@ -133,6 +147,55 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         return _TidePredictionDialog(station: station);
       },
     );
+  }
+
+  void _showWaveDetailSheet(WavePointData point, int hourOffset) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => _WaveDetailSheet(point: point, hourOffset: hourOffset),
+    );
+  }
+
+  void _fetchWavesForBounds(LatLngBounds bounds) {
+    _wavesDebounceTimer?.cancel();
+    _wavesDebounceTimer = Timer(const Duration(milliseconds: 800), () async {
+      if (!mounted) return;
+
+      final activeLayers = ref.read(activeMapLayersProvider);
+      if (!activeLayers.contains(MapLayerConfig.wavesId)) return;
+
+      if (_currentZoom < 5.0) return;
+
+      setState(() {
+        _wavesError = null;
+      });
+
+      try {
+        final wavesService = ref.read(wavesServiceProvider);
+        final data = await wavesService.fetchGridWaves(
+          minLat: bounds.south,
+          maxLat: bounds.north,
+          minLng: bounds.west,
+          maxLng: bounds.east,
+        );
+
+        if (mounted) {
+          setState(() {
+            _wavesData = data;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _wavesError = e.toString().replaceAll('Exception: ', '');
+          });
+        }
+      }
+    });
   }
 
   Future<void> _centerOnMyLocation() async {
@@ -169,14 +232,28 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     }
   }
 
+  Color _getWaveColor(double waveHeightFt) {
+    if (waveHeightFt < 2.0) {
+      return Colors.green.shade600;
+    } else if (waveHeightFt < 4.0) {
+      return Colors.amber.shade700;
+    } else if (waveHeightFt < 6.0) {
+      return Colors.orange.shade800;
+    } else {
+      return Colors.red.shade700;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeLayers = ref.watch(activeMapLayersProvider);
     final tideStationsAsync = ref.watch(tideStationsProvider);
     final userPositionAsync = ref.watch(userPositionStreamProvider);
     final alertsState = ref.watch(alertsNotifierProvider);
+    final waveHourOffset = ref.watch(selectedWaveHourOffsetProvider);
 
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
+    final showWaves = activeLayers.contains(MapLayerConfig.wavesId);
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
     final showSoundings = activeLayers.contains(MapLayerConfig.depthNumbersId);
     final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
@@ -184,6 +261,12 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final initialCenter = widget.spots.isNotEmpty
         ? LatLng(widget.spots.first.latitude, widget.spots.first.longitude)
         : const LatLng(25.7617, -80.1918);
+
+    ref.listen<Set<String>>(activeMapLayersProvider, (prev, next) {
+      if (next.contains(MapLayerConfig.wavesId) && _currentBounds != null) {
+        _fetchWavesForBounds(_currentBounds!);
+      }
+    });
 
     ref.listen<AsyncValue<List<TideStation>>>(tideStationsProvider, (prev, next) {
       if (next.hasError && showTides) {
@@ -210,11 +293,24 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           options: MapOptions(
             initialCenter: initialCenter,
             initialZoom: widget.spots.isNotEmpty ? 10.0 : 9.0,
-            onMapReady: () {},
+            onMapReady: () {
+              final bounds = _mapController.camera.visibleBounds;
+              setState(() {
+                _currentBounds = bounds;
+                _currentZoom = _mapController.camera.zoom;
+              });
+              if (showWaves) {
+                _fetchWavesForBounds(bounds);
+              }
+            },
             onPositionChanged: (position, hasGesture) {
               setState(() {
                 _currentBounds = position.visibleBounds;
+                _currentZoom = position.zoom;
               });
+              if (showWaves) {
+                _fetchWavesForBounds(position.visibleBounds);
+              }
             },
           ),
           children: [
@@ -265,6 +361,63 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 ),
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
+              ),
+
+            // Waves Grid Markers Layer
+            if (showWaves && _wavesData != null && _currentZoom >= 5.0)
+              MarkerLayer(
+                markers: _wavesData!.map((point) {
+                  final entry = point.getForOffset(waveHourOffset);
+                  final waveColor = _getWaveColor(entry.waveHeightFt);
+                  final directionRad = entry.waveDirectionDeg != null
+                      ? (entry.waveDirectionDeg! * (3.1415926535 / 180.0))
+                      : 0.0;
+
+                  return Marker(
+                    point: LatLng(point.latitude, point.longitude),
+                    width: 50.0,
+                    height: 50.0,
+                    child: GestureDetector(
+                      onTap: () => _showWaveDetailSheet(point, waveHourOffset),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: waveColor.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (entry.waveDirectionDeg != null)
+                              Transform.rotate(
+                                angle: directionRad,
+                                child: const Icon(
+                                  Icons.arrow_upward,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            Text(
+                              '${entry.waveHeightFt.toStringAsFixed(1)}ft',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
 
             // User Position Accuracy Circle & Marker Layer
@@ -388,6 +541,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
             RichAttributionWidget(
               attributions: [
+                if (showWaves)
+                  TextSourceAttribution(
+                    'Wave data: Open-Meteo / DWD',
+                    onTap: () {},
+                  ),
                 TextSourceAttribution(
                   'OpenStreetMap & NOAA contributors',
                   onTap: () {},
@@ -402,7 +560,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           Positioned(
             top: 12,
             left: 12,
-            right: 68, // Leave room for top-right FAB controls
+            right: 68,
             child: GestureDetector(
               onTap: () {
                 context.go('/alerts');
@@ -445,8 +603,53 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Depth Color Legend Widget when Depth Layer is active
-        if (showDepth)
+        // Waves Error Banner Overlay
+        if (showWaves && _wavesError != null)
+          Positioned(
+            top: mostSevereAlert != null ? 58 : 16,
+            left: 16,
+            right: 68,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Couldn't load wave data",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      if (_currentBounds != null) {
+                        _fetchWavesForBounds(_currentBounds!);
+                      }
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // Wave Height Color Scale Legend Widget
+        if (showWaves && _wavesError == null)
           Positioned(
             top: mostSevereAlert != null ? 58 : 16,
             left: 16,
@@ -461,7 +664,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Elevation / Depth',
+                    'Wave Height (ft)',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -469,34 +672,52 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    width: 110,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF000055), // Deep Ocean
-                          Color(0xFF0066CC), // Shallow Water
-                          Color(0xFF66CCFF), // Near Shore
-                          Color(0xFF009933), // Lowland
-                          Color(0xFF996633), // Highlands
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const SizedBox(
-                    width: 110,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Deep', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                        Text('High', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      _LegendBox(color: Colors.green.shade600, label: '<2'),
+                      const SizedBox(width: 4),
+                      _LegendBox(color: Colors.amber.shade700, label: '2-4'),
+                      const SizedBox(width: 4),
+                      _LegendBox(color: Colors.orange.shade800, label: '4-6'),
+                      const SizedBox(width: 4),
+                      _LegendBox(color: Colors.red.shade700, label: '>6'),
+                    ],
                   ),
                 ],
+              ),
+            ),
+          ),
+
+        // Waves Time Control Widget Bar (Now, +3h, +6h, +12h, +24h)
+        if (showWaves)
+          Positioned(
+            bottom: 30,
+            left: 16,
+            right: 16,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _WaveTimeButton(label: 'Now', offset: 0),
+                    _WaveTimeButton(label: '+3h', offset: 3),
+                    _WaveTimeButton(label: '+6h', offset: 6),
+                    _WaveTimeButton(label: '+12h', offset: 12),
+                    _WaveTimeButton(label: '+24h', offset: 24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -569,6 +790,277 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
       default:
         return Colors.blueGrey.shade800;
     }
+  }
+}
+
+class _LegendBox extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendBox({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 22,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 9),
+        ),
+      ],
+    );
+  }
+}
+
+class _WaveTimeButton extends ConsumerWidget {
+  final String label;
+  final int offset;
+
+  const _WaveTimeButton({required this.label, required this.offset});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentOffset = ref.watch(selectedWaveHourOffsetProvider);
+    final isSelected = currentOffset == offset;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (_) {
+          ref.read(selectedWaveHourOffsetProvider.notifier).setHourOffset(offset);
+        },
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+}
+
+class _WaveDetailSheet extends StatelessWidget {
+  final WavePointData point;
+  final int hourOffset;
+
+  const _WaveDetailSheet({required this.point, required this.hourOffset});
+
+  @override
+  Widget build(BuildContext context) {
+    final currentEntry = point.getForOffset(hourOffset);
+    final formattedTime = DateFormat.jm().format(currentEntry.time);
+
+    final compassDir =
+        HourlyWaveEntry.degreesToCompass(currentEntry.waveDirectionDeg);
+
+    final next24Entries = point.hourlyEntries.where((e) {
+      return e.time.isAfter(currentEntry.time) &&
+          e.time.isBefore(currentEntry.time.add(const Duration(hours: 25)));
+    }).take(24).toList();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Wave Conditions ($formattedTime)',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      'Point: ${point.latitude.toStringAsFixed(3)}, ${point.longitude.toStringAsFixed(3)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _DetailMetric(
+                          label: 'Wave Height',
+                          value:
+                              '${currentEntry.waveHeightFt.toStringAsFixed(1)} ft',
+                          icon: Icons.water,
+                        ),
+                        _DetailMetric(
+                          label: 'Direction',
+                          value: '$compassDir (${currentEntry.waveDirectionDeg?.toStringAsFixed(0)}°)',
+                          icon: Icons.explore,
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _DetailMetric(
+                          label: 'Wave Period',
+                          value: currentEntry.wavePeriodSec != null
+                              ? '${currentEntry.wavePeriodSec!.toStringAsFixed(1)} s'
+                              : 'N/A',
+                          icon: Icons.timer_outlined,
+                        ),
+                        _DetailMetric(
+                          label: 'Swell Height',
+                          value: currentEntry.swellHeightFt != null
+                              ? '${currentEntry.swellHeightFt!.toStringAsFixed(1)} ft'
+                              : 'N/A',
+                          icon: Icons.waves,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Period: time between waves (longer periods = smooth swell, short = choppy waves).',
+                        style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Next 24-Hour Forecast',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: next24Entries.length,
+                itemBuilder: (context, index) {
+                  final entry = next24Entries[index];
+                  final timeLabel = DateFormat.j().format(entry.time);
+
+                  return Card(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            timeLabel,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${entry.waveHeightFt.toStringAsFixed(1)} ft',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (entry.wavePeriodSec != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '${entry.wavePeriodSec!.toStringAsFixed(0)}s',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _DetailMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 

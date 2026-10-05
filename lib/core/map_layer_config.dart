@@ -4,6 +4,7 @@ class MapLayerConfig {
   static const String depthBathymetryId = 'depth_bathymetry';
   static const String depthNumbersId = 'depth_numbers';
   static const String weatherRadarId = 'weather_radar';
+  static const String wavesId = 'waves';
 
   // URLs
   static const String openStreetMapTileUrl =
@@ -33,4 +34,8 @@ class MapLayerConfig {
 
   static const String noaaTideDataGetterUrl =
       'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter';
+
+  // TODO: Open-Meteo is free for non-commercial use only. A paid API key / subscription plan is required if Seabound is commercialized or monetized.
+  static const String openMeteoMarineUrl =
+      'https://marine-api.open-meteo.com/v1/marine';
 }

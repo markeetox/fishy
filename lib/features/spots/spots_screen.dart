@@ -8,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
 import '../alerts/alerts_providers.dart';
@@ -48,61 +51,87 @@ class _SpotsScreenState extends ConsumerState<SpotsScreen> {
   Widget build(BuildContext context) {
     final spotsAsync = ref.watch(allSpotsStreamProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Fishing Spots'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: SegmentedButton<ViewMode>(
-              segments: const [
-                ButtonSegment<ViewMode>(
-                  value: ViewMode.map,
-                  icon: Icon(Icons.map_outlined),
-                  label: Text('Map'),
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 88),
+              child: spotsAsync.when(
+                data: (spots) {
+                  if (_selectedView == ViewMode.map) {
+                    return _SpotsMapView(spots: spots);
+                  } else {
+                    return _SpotsListView(spots: spots);
+                  }
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Error loading spots: $error',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
                 ),
-                ButtonSegment<ViewMode>(
-                  value: ViewMode.list,
-                  icon: Icon(Icons.list_outlined),
-                  label: Text('List'),
+              ),
+            ),
+
+            // Floating Top Bar Overlay
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(
+                leading: Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: OceanThemeExtension.defaultTokens.surface,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: OceanThemeExtension.defaultTokens.cyan,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Fishing Spots',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                  ),
                 ),
-              ],
-              selected: {_selectedView},
-              onSelectionChanged: (newSelection) {
-                setState(() {
-                  _selectedView = newSelection.first;
-                });
-              },
+                actions: [
+                  FloatingTopBarButton(
+                    icon: _selectedView == ViewMode.map
+                        ? Icons.list_outlined
+                        : Icons.map_outlined,
+                    tooltip: 'Toggle Map / List View',
+                    onPressed: () {
+                      setState(() {
+                        _selectedView = _selectedView == ViewMode.map
+                            ? ViewMode.list
+                            : ViewMode.map;
+                      });
+                    },
+                  ),
+                  FloatingTopBarButton(
+                    icon: Icons.add_location_alt,
+                    tooltip: 'Add Spot',
+                    onPressed: () {
+                      context.push('/spots/add');
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      body: spotsAsync.when(
-        data: (spots) {
-          if (_selectedView == ViewMode.map) {
-            return _SpotsMapView(spots: spots);
-          } else {
-            return _SpotsListView(spots: spots);
-          }
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Error loading spots: $error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
+          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/spots/add');
-        },
-        tooltip: 'Add Spot',
-        child: const Icon(Icons.add_location_alt),
       ),
     );
   }
@@ -827,8 +856,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 constraints: const BoxConstraints(maxWidth: 250),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.85),
+                  color: OceanThemeExtension.defaultTokens.surface,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white24, width: 2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1049,8 +1079,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: OceanThemeExtension.defaultTokens.surface,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white24, width: 2),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
@@ -1073,34 +1104,39 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Map Control FABs: Layers (with Active Count Badge) & My Location
+        // Map Control Floating Buttons Column (Top Right)
         Positioned(
           top: 16,
           right: 16,
           child: Column(
             children: [
-              Badge(
-                isLabelVisible: activeCount > 0,
-                label: Text('$activeCount'),
-                child: FloatingActionButton.small(
-                  heroTag: 'map_layers_fab',
-                  onPressed: _openLayersDialog,
-                  tooltip: 'Map Layers',
-                  child: const Icon(Icons.layers_outlined),
-                ),
+              FloatingTopBarButton(
+                icon: Icons.layers_outlined,
+                tooltip: 'Map Layers',
+                badge: activeCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF00E5FF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$activeCount',
+                          style: const TextStyle(
+                            color: Color(0xFF001018),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      )
+                    : null,
+                onPressed: _openLayersDialog,
               ),
               const SizedBox(height: 8),
-              FloatingActionButton.small(
-                heroTag: 'map_my_location_fab',
-                onPressed: _isLocating ? null : _centerOnMyLocation,
+              FloatingTopBarButton(
+                icon: Icons.my_location,
                 tooltip: 'My Location',
-                child: _isLocating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.my_location),
+                onPressed: _isLocating ? null : _centerOnMyLocation,
               ),
             ],
           ),
@@ -1114,7 +1150,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           child: GestureDetector(
             onTap: () => NavigationDisclaimer.showFullDisclaimerDialog(context),
             child: Container(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: Colors.black.withValues(alpha: 0.6),
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               child: const Text(
                 'Not for navigation. Tap for details.',
@@ -1173,7 +1209,7 @@ class _ReefDetailSheet extends StatelessWidget {
                   child: Text(
                     reef.reefName,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w900,
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1258,7 +1294,7 @@ class _ReefDetailSheet extends StatelessWidget {
             Text(
               MapLayerConfig.fwcStructureInfoText,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                    color: Colors.white70,
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
                   ),
@@ -1285,7 +1321,7 @@ class _ReefMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+        Icon(icon, color: OceanThemeExtension.defaultTokens.cyan, size: 20),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1293,12 +1329,12 @@ class _ReefMetric extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                    color: Colors.white70,
                   ),
             ),
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
             ),
           ],
         ),
@@ -1353,7 +1389,7 @@ class _WaveTimeButton extends ConsumerWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
           ),
         ),
         selected: isSelected,
@@ -1402,13 +1438,13 @@ class _WaveDetailSheet extends StatelessWidget {
                     Text(
                       'Wave Conditions ($formattedTime)',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                           ),
                     ),
                     Text(
                       'Point: ${point.latitude.toStringAsFixed(3)}, ${point.longitude.toStringAsFixed(3)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
+                            color: Colors.white70,
                           ),
                     ),
                   ],
@@ -1466,10 +1502,7 @@ class _WaveDetailSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.5),
+                        color: OceanThemeExtension.defaultTokens.surface,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
@@ -1484,8 +1517,8 @@ class _WaveDetailSheet extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Next 24-Hour Forecast',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 8),
@@ -1513,7 +1546,7 @@ class _WaveDetailSheet extends StatelessWidget {
                           Text(
                             '${entry.waveHeightFt.toStringAsFixed(1)} ft',
                             style: const TextStyle(
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                               fontSize: 12,
                             ),
                           ),
@@ -1521,9 +1554,9 @@ class _WaveDetailSheet extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               '${entry.wavePeriodSec!.toStringAsFixed(0)}s',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 10,
-                                color: Theme.of(context).colorScheme.outline,
+                                color: Colors.white70,
                               ),
                             ),
                           ],
@@ -1556,7 +1589,7 @@ class _DetailMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
+        Icon(icon, color: OceanThemeExtension.defaultTokens.cyan, size: 22),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1564,12 +1597,12 @@ class _DetailMetric extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                    color: Colors.white70,
                   ),
             ),
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
             ),
           ],
         ),
@@ -1597,13 +1630,15 @@ class _TidePredictionDialog extends ConsumerWidget {
             children: [
               Icon(
                 Icons.waves,
-                color: Theme.of(context).colorScheme.tertiary,
+                color: OceanThemeExtension.defaultTokens.cyan,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   station.name,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                 ),
               ),
             ],
@@ -1612,7 +1647,7 @@ class _TidePredictionDialog extends ConsumerWidget {
             Text(
               'Station ID: ${station.id} (${station.state})',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                    color: Colors.white70,
                   ),
             ),
         ],
@@ -1631,7 +1666,9 @@ class _TidePredictionDialog extends ConsumerWidget {
               children: [
                 Text(
                   "Today's High / Low Tides:",
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 ...predictions.map((p) {
@@ -1649,12 +1686,14 @@ class _TidePredictionDialog extends ConsumerWidget {
                                   ? Icons.arrow_upward
                                   : Icons.arrow_downward,
                               size: 16,
-                              color: isHigh ? Colors.blue : Colors.orange,
+                              color: isHigh
+                                  ? OceanThemeExtension.defaultTokens.cyan
+                                  : Colors.orange,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               isHigh ? 'High Tide' : 'Low Tide',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(fontWeight: FontWeight.w800),
                             ),
                           ],
                         ),
@@ -1703,19 +1742,21 @@ class _SpotsListView extends StatelessWidget {
               Icon(
                 Icons.place_outlined,
                 size: 80,
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                color: OceanThemeExtension.defaultTokens.cyan.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
                 'No Fishing Spots Shared Yet',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Be the first to share a favorite fishing spot with the community!',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
+                      color: Colors.white70,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -1745,7 +1786,7 @@ class _SpotsListView extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             onTap: () {
               context.push('/spots/${spot.id}');
             },
@@ -1761,7 +1802,7 @@ class _SpotsListView extends StatelessWidget {
                         child: Text(
                           spot.name,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w900,
                               ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1770,7 +1811,7 @@ class _SpotsListView extends StatelessWidget {
                       Text(
                         formattedDate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
+                              color: Colors.white70,
                             ),
                       ),
                     ],
@@ -1787,14 +1828,14 @@ class _SpotsListView extends StatelessWidget {
                         Icon(
                           Icons.person_outline,
                           size: 16,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: OceanThemeExtension.defaultTokens.cyan,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'By ${spot.authorName}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
+                                color: OceanThemeExtension.defaultTokens.cyan,
+                                fontWeight: FontWeight.w800,
                               ),
                         ),
                       ],
@@ -1818,7 +1859,7 @@ class _SpotsListView extends StatelessWidget {
                         return Chip(
                           label: Text(
                             s,
-                            style: const TextStyle(fontSize: 12),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                           padding: EdgeInsets.zero,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

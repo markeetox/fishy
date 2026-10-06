@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import '../map/location_providers.dart';
 import '../profile/badge_service.dart';
 import 'alerts_providers.dart';
@@ -38,7 +41,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
               Text(
                 alert.event,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                     ),
               ),
               const SizedBox(height: 4),
@@ -53,8 +56,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 if (alert.areaDesc.isNotEmpty) ...[
                   Text(
                     'Affected Area:',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                   ),
                   Text(alert.areaDesc),
@@ -63,8 +66,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 if (alert.headline.isNotEmpty) ...[
                   Text(
                     alert.headline,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 12),
@@ -72,8 +75,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 if (alert.description.isNotEmpty) ...[
                   Text(
                     'Description:',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 4),
@@ -83,8 +86,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 if (alert.instruction.isNotEmpty) ...[
                   Text(
                     'Instructions:',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 4),
@@ -93,8 +96,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 ],
                 Text(
                   'Sender: ${alert.senderName}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white70,
                       ),
                 ),
               ],
@@ -116,7 +119,6 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     final alertsState = ref.watch(alertsNotifierProvider);
     final alertsNotifier = ref.read(alertsNotifierProvider.notifier);
 
-    // Listen to user movement > 5km
     ref.listen<AsyncValue<Position>>(userPositionStreamProvider, (prev, next) {
       if (next.hasValue) {
         alertsNotifier.onPositionUpdate(next.value!);
@@ -127,74 +129,105 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         ? DateFormat.jm().format(alertsState.lastChecked!)
         : null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Weather & Marine Alerts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Alerts',
-            onPressed: alertsState.isLoading
-                ? null
-                : () => alertsNotifier.refreshAlerts(),
-          ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Column(
-            children: [
-              // Header status / timestamp bar
-              if (lastCheckedStr != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withValues(alpha: 0.4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Last checked $lastCheckedStr',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (alertsState.isLoading)
-                        const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 88, bottom: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Weather & Marine Alerts',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
                         ),
-                    ],
+                        const SizedBox(height: 16),
+
+                        // Header status / timestamp bar
+                        if (lastCheckedStr != null)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 10.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: OceanThemeExtension.defaultTokens.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24, width: 2),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Last checked $lastCheckedStr',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                if (alertsState.isLoading)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 16),
+                        _buildBodyContent(context, alertsState, lastCheckedStr),
+                        const SizedBox(height: 24),
+
+                        // Mandatory Footer Disclaimer
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: OceanThemeExtension.defaultTokens.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24, width: 2),
+                          ),
+                          child: Text(
+                            'Alerts are checked only while Seabound is open and may be delayed. Always check weather.gov and VHF marine radio for official warnings.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-
-              // Main body area
-              Expanded(
-                child: _buildBodyContent(context, alertsState, lastCheckedStr),
               ),
+            ),
 
-              // Mandatory Footer Disclaimer
-              Container(
-                padding: const EdgeInsets.all(12.0),
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                width: double.infinity,
-                child: Text(
-                  'Alerts are checked only while Seabound is open and may be delayed. Always check weather.gov and VHF marine radio for official warnings.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                        fontSize: 11,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
+            // Floating Top Bar with Refresh Action
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(
+                actions: [
+                  FloatingTopBarButton(
+                    icon: Icons.refresh,
+                    tooltip: 'Refresh Alerts',
+                    onPressed: alertsState.isLoading
+                        ? null
+                        : () => alertsNotifier.refreshAlerts(),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -221,9 +254,9 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
               Text(
                 state.errorMessage!,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Theme.of(context).colorScheme.error,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                     ),
               ),
             ],
@@ -239,23 +272,25 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.public_off,
                 size: 64,
-                color: Theme.of(context).colorScheme.outline,
+                color: Colors.white60,
               ),
               const SizedBox(height: 16),
               Text(
                 'Active weather alerts are unavailable for this point.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
               const SizedBox(height: 8),
               Text(
                 'National Weather Service active alert coverage is limited to US coastal and inland areas.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white70,
                     ),
               ),
             ],
@@ -274,7 +309,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
               Icon(
                 Icons.verified_user_outlined,
                 size: 64,
-                color: Theme.of(context).colorScheme.primary,
+                color: OceanThemeExtension.defaultTokens.cyan,
               ),
               const SizedBox(height: 16),
               Text(
@@ -282,7 +317,9 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                     ? 'No active alerts for this location as of $lastCheckedStr.'
                     : 'No active weather alerts for this location.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
             ],
           ),
@@ -291,7 +328,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: state.alerts.length,
       itemBuilder: (context, index) {
         final alert = state.alerts[index];
@@ -305,7 +343,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             onTap: () => _showAlertDetail(context, alert),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -321,8 +359,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                             if (alert.isMarineRelated) ...[
                               Icon(
                                 Icons.phishing,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                                color: OceanThemeExtension.defaultTokens.cyan,
                               ),
                               const SizedBox(width: 6),
                             ],
@@ -333,7 +371,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                                     .textTheme
                                     .titleMedium
                                     ?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -350,16 +388,16 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.place_outlined,
                           size: 16,
-                          color: Theme.of(context).colorScheme.outline,
+                          color: Colors.white70,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             alert.areaDesc,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.bodyMedium,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -371,8 +409,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Valid: ${effectiveStr ?? 'Now'} – ${expiresStr ?? 'Until further notice'}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white70,
                           ),
                     ),
                   ],
@@ -394,14 +432,13 @@ class _SeverityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color backgroundColor;
-    Color textColor = Colors.white;
 
     switch (severity.toLowerCase()) {
       case 'extreme':
         backgroundColor = Colors.red.shade900;
         break;
       case 'severe':
-        backgroundColor = Colors.red.shade600;
+        backgroundColor = Colors.red.shade700;
         break;
       case 'moderate':
         backgroundColor = Colors.orange.shade800;
@@ -414,17 +451,17 @@ class _SeverityChip extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         severity.toUpperCase(),
-        style: TextStyle(
-          color: textColor,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

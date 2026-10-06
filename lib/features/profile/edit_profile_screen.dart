@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import '../auth/auth_providers.dart';
 import 'badge_service.dart';
 import 'catalog.dart';
@@ -91,9 +94,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final userDoc = userDocState.asData?.value;
 
     if (currentUser == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Edit Profile')),
-        body: const Center(child: Text('User not authenticated.')),
+      return GradientBackground.red(
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(child: Text('User not authenticated.')),
+        ),
       );
     }
 
@@ -104,122 +109,137 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       (i) => 'avatar_${(i + 1).toString().padLeft(2, '0')}',
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_errorMessage != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+    return GradientBackground.red(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Edit Profile',
+                            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username *',
-                      hintText: 'e.g. Captain_Jack',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (value) => Catalog.validateUsername(value),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Choose Avatar Preset',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 20),
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Username *',
+                            hintText: 'e.g. Captain_Jack',
+                            prefixIcon: Icon(Icons.person_outline),
+                            border: OutlineInputBorder(),
+                          ),
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: (value) => Catalog.validateUsername(value),
                         ),
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                    ),
-                    itemCount: avatarIds.length,
-                    itemBuilder: (context, index) {
-                      final avatarId = avatarIds[index];
-                      final isSelected = avatarId == _selectedAvatarId;
+                        const SizedBox(height: 24),
+                        Text(
+                          'Choose Avatar Preset',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                          itemCount: avatarIds.length,
+                          itemBuilder: (context, index) {
+                            final avatarId = avatarIds[index];
+                            final isSelected = avatarId == _selectedAvatarId;
 
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedAvatarId = avatarId;
-                          });
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.transparent,
-                              width: 3,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .primaryContainer,
-                            child: Image.asset(
-                              'assets/avatars/$avatarId.png',
-                              errorBuilder: (context, error, stackTrace) {
-                                return Text(
-                                  'A${index + 1}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedAvatarId = avatarId;
+                                });
                               },
-                            ),
-                          ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? OceanThemeExtension.defaultTokens.cyan
+                                        : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  backgroundColor: OceanThemeExtension.defaultTokens.surface,
+                                  child: Image.asset(
+                                    'assets/avatars/$avatarId.png',
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Text(
+                                        'A${index + 1}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: _isSaving ? null : () => _saveProfile(currentUser.uid),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: _isSaving ? null : () => _saveProfile(currentUser.uid),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Save Profile'),
+                        ),
+                      ],
                     ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Save Profile'),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(isRedScreen: true),
+            ),
+          ],
         ),
       ),
     );

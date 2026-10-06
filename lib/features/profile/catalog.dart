@@ -30,7 +30,7 @@ class Catalog {
       description: 'Create your Seabound account.',
       hint: 'Create a Seabound account.',
       xp: 25,
-      imageAsset: 'assets/badges/welcome_aboard.png',
+      imageAsset: 'assets/badges/welcome.png',
       sortOrder: 1,
     ),
     const AchievementBadge(
@@ -39,7 +39,7 @@ class Catalog {
       description: 'Set up your username and choose an avatar.',
       hint: 'Choose a username and avatar in Profile.',
       xp: 25,
-      imageAsset: 'assets/badges/colors_raised.png',
+      imageAsset: 'assets/badges/color.png',
       sortOrder: 2,
     ),
     const AchievementBadge(
@@ -48,7 +48,7 @@ class Catalog {
       description: 'Log your first fishing trip.',
       hint: 'Log 1 trip in the Trips tab.',
       xp: 50,
-      imageAsset: 'assets/badges/first_log.png',
+      imageAsset: 'assets/badges/first.png',
       sortOrder: 3,
     ),
     const AchievementBadge(
@@ -66,7 +66,7 @@ class Catalog {
       description: 'Log 25 fishing trips.',
       hint: 'Log 25 trips in the Trips tab.',
       xp: 250,
-      imageAsset: 'assets/badges/salty_dog.png',
+      imageAsset: 'assets/badges/salty.png',
       sortOrder: 5,
     ),
     const AchievementBadge(
@@ -75,7 +75,7 @@ class Catalog {
       description: 'Share your first fishing spot on the map.',
       hint: 'Post 1 fishing spot.',
       xp: 50,
-      imageAsset: 'assets/badges/spot_finder.png',
+      imageAsset: 'assets/badges/master.png',
       sortOrder: 6,
     ),
     const AchievementBadge(
@@ -84,7 +84,7 @@ class Catalog {
       description: 'Turn on the Depth & Bathymetry map layer.',
       hint: 'Toggle the Depth layer on the map.',
       xp: 25,
-      imageAsset: 'assets/badges/chart_reader.png',
+      imageAsset: 'assets/badges/chart.png',
       sortOrder: 7,
     ),
     const AchievementBadge(
@@ -93,7 +93,7 @@ class Catalog {
       description: 'Check active weather & marine alerts.',
       hint: 'Open the Alerts tab.',
       xp: 25,
-      imageAsset: 'assets/badges/weather_eye.png',
+      imageAsset: 'assets/badges/weather.png',
       sortOrder: 8,
     ),
     const AchievementBadge(
@@ -102,7 +102,7 @@ class Catalog {
       description: 'Use the My Location button on the map.',
       hint: 'Tap the My Location button on the map.',
       xp: 25,
-      imageAsset: 'assets/badges/navigator.png',
+      imageAsset: 'assets/badges/pirate.png',
       sortOrder: 9,
     ),
     AchievementBadge(
@@ -111,7 +111,7 @@ class Catalog {
       description: 'Join Seabound as an early member.',
       hint: 'Create an account before Dec 31, 2026.',
       xp: 100,
-      imageAsset: 'assets/badges/founding_crew.png',
+      imageAsset: 'assets/badges/founding.png',
       sortOrder: 10,
     ),
   ];

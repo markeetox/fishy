@@ -29,7 +29,7 @@ class SeaboundApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Seabound',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,
     );

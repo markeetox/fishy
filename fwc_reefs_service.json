@@ -1,0 +1,160 @@
+{
+ "currentVersion": 11.5,
+ "cimVersion": "3.5.0",
+ "serviceDescription": "<div style='text-align:Left;'><p style='font-size:16ptmargin:0 0 0 0;'><span>Encompassing 34 of 35 different coastal counties spread along 1,357 miles of ocean fronting coastline, Florida manages one of the most diverse, and most active artificial reef programs in the United States. As of May 2025, the FWC Artificial Reef Program reports over 4,442 artificial reef deployment locations state-wide. Artificial Reefs are about evenly divided between state and federal waters and range from 1 feet in depth to 511 feet (average depth 68 feet). Each point in this GIS data set represents a single deployment event (either a uniquely located artificial reef or deployments of the same reef on different days). Division of Marine Fisheries Management maintains and updates the source database. This data set represents deployments through May 1, 2025.<\/span><\/p><p style='font-size:16ptmargin:0 0 0 0;'><span /><\/p><div><div><p style='margin:0 0 0 0;'><span /><\/p><p><span /><\/p><\/div><\/div><\/div>",
+ "mapName": "Open Data MarineEco",
+ "description": "Encompassing 34 of 35 different coastal counties spread along 1,357 miles of ocean fronting coastline, Florida manages one of the most diverse, and most active artificial reef programs in the United States. As of May 2025, the FWC Artificial Reef Program reports over 4,442 artificial reef deployment locations state-wide. Artificial Reefs are about evenly divided between state and federal waters and range from 1 feet in depth to 511 feet (average depth 68 feet). Each point in this GIS data set represents a single deployment event (either a uniquely located artificial reef or deployments of the same reef on different days). Division of Marine Fisheries Management maintains and updates the source database. This data set represents deployments through May 1, 2025.",
+ "copyrightText": "FWC Division of Marine Fisheries Management",
+ "supportsDynamicLayers": true,
+ "layers": [
+  {
+   "id": 12,
+   "name": "Artificial Reef Locations in Florida",
+   "parentLayerId": -1,
+   "defaultVisibility": true,
+   "subLayerIds": null,
+   "minScale": 4000000,
+   "maxScale": 1000,
+   "type": "Feature Layer",
+   "geometryType": "esriGeometryPoint",
+   "supportsDynamicLegends": true
+  }
+ ],
+ "tables": [],
+ "spatialReference": {
+  "wkid": 102967,
+  "latestWkid": 6439,
+  "xyTolerance": 0.001,
+  "zTolerance": 0.001,
+  "mTolerance": 0.001,
+  "falseX": -19550100,
+  "falseY": -7526400,
+  "xyUnits": 10000,
+  "falseZ": -100000,
+  "zUnits": 10000,
+  "falseM": -100000,
+  "mUnits": 10000
+ },
+ "singleFusedMapCache": false,
+ "initialExtent": {
+  "xmin": 309040.367181159,
+  "ymin": 550040.6694026605,
+  "xmax": 506159.04364896275,
+  "ymax": 703458.5072195831,
+  "spatialReference": {
+   "wkid": 102967,
+   "latestWkid": 6439,
+   "xyTolerance": 0.001,
+   "zTolerance": 0.001,
+   "mTolerance": 0.001,
+   "falseX": -19550100,
+   "falseY": -7526400,
+   "xyUnits": 10000,
+   "falseZ": -100000,
+   "zUnits": 10000,
+   "falseM": -100000,
+   "mUnits": 10000
+  }
+ },
+ "fullExtent": {
+  "xmin": 63879.550799999386,
+  "ymin": 48148.00530000031,
+  "xmax": 801385.4948999994,
+  "ymax": 747683.5535000004,
+  "zmin": 0,
+  "zmax": 0,
+  "spatialReference": {
+   "wkid": 102967,
+   "latestWkid": 6439,
+   "xyTolerance": 0.001,
+   "zTolerance": 0.001,
+   "mTolerance": 0.001,
+   "falseX": -19550100,
+   "falseY": -7526400,
+   "xyUnits": 10000,
+   "falseZ": -100000,
+   "zUnits": 10000,
+   "falseM": -100000,
+   "mUnits": 10000
+  }
+ },
+ "datesInUnknownTimezone": false,
+ "minScale": 4000000,
+ "maxScale": 1000,
+ "units": "esriMeters",
+ "supportedImageFormatTypes": "PNG32,PNG24,PNG,JPG,DIB,TIFF,EMF,PS,PDF,GIF,SVG,SVGZ,BMP",
+ "documentInfo": {
+  "Title": "Open Data MarineEco",
+  "Author": "",
+  "Comments": "",
+  "Subject": "",
+  "Category": "",
+  "Version": "3.3.0",
+  "AntialiasingMode": "Fast",
+  "TextAntialiasingMode": "Force",
+  "Keywords": "FWC Region-Northeast,Estero Bay,GIS,northwest Florida,marine,oceans,Charlotte Harbor,Florida Keys,St. Johns River Water Management District,Cape Canaveral National Seashore,FWC Region-South,artificial reefs,habitat (rivers,estuaries,ecology,hard bottom),FWC Region-Southwest,statewide,west coast of Florida,northeast Florida,Southwest Florida Water Management District,benthic,Big Bend,Florida Straits,Biscayne Bay,Suwannee River Water Management District,Florida Bay,southwest Florida,Atlantic Ocean,FWC Region-North Central,south Florida,Atlantic Ocean,FWC Region-Northwest,Florida,Tampa Bay,Northwest Florida Water Management District,Gulf of Mexico,southeast Florida,South Florida Water Management District,mapping,north Florida,Gulf of Mexico,east coast of Florida,Cedar Keys National Wildlife Refuge"
+ },
+ "supportsQueryDomains": true,
+ "capabilities": "Query,Map,Data",
+ "supportedQueryFormats": "JSON, geoJSON, PBF",
+ "exportTilesAllowed": false,
+ "referenceScale": 0.0,
+ "datumTransformations": [
+  {
+   "geoTransforms": [
+    {
+     "wkid": 108363,
+     "latestWkid": 108363,
+     "transformForward": true,
+     "name": "WGS_1984_(ITRF08)_To_NAD_1983_2011"
+    }
+   ]
+  },
+  {
+   "geoTransforms": [
+    {
+     "wkid": 108363,
+     "latestWkid": 108363,
+     "transformForward": false,
+     "name": "WGS_1984_(ITRF08)_To_NAD_1983_2011"
+    }
+   ]
+  },
+  {
+   "geoTransforms": [
+    {
+     "wkid": 108363,
+     "latestWkid": 108363,
+     "transformForward": true,
+     "name": "WGS_1984_(ITRF08)_To_NAD_1983_2011"
+    }
+   ]
+  },
+  {
+   "geoTransforms": [
+    {
+     "wkid": 108363,
+     "latestWkid": 108363,
+     "transformForward": false,
+     "name": "WGS_1984_(ITRF08)_To_NAD_1983_2011"
+    }
+   ]
+  }
+ ],
+ "supportsDatumTransformation": true,
+ "floorAwareMapProperties": {
+  "defaultFloorFilterSettings": {"isEnabled": false}
+ },
+ "archivingInfo": {"supportsHistoricMoment": false},
+ "supportsClipping": true,
+ "supportsSpatialFilter": true,
+ "supportsTimeRelation": true,
+ "supportsQueryDataElements": true,
+ "mapUnits": {"uwkid": 9001},
+ "maxSelectionCount": 2000,
+ "maxRecordCount": 2000,
+ "maxImageHeight": 4096,
+ "maxImageWidth": 4096,
+ "supportedExtensions": "",
+ "serviceItemId": "774181a0164b4399a159e9de863d6668"
+}

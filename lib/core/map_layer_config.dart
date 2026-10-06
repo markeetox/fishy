@@ -7,6 +7,8 @@ class MapLayerConfig {
   static const String wavesId = 'waves';
   static const String seaTemperatureId = 'sea_temperature';
   static const String chlorophyllId = 'chlorophyll';
+  static const String artificialReefsId = 'artificial_reefs';
+  static const String reefHabitatId = 'reef_habitat';
 
   // URLs
   static const String openStreetMapTileUrl =
@@ -62,4 +64,14 @@ class MapLayerConfig {
   }) {
     return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/$layerIdentifier/default/$dateStr/$tileMatrixSet/{z}/{y}/{x}.png';
   }
+
+  // FWC Structure Endpoints
+  static const String fwcArtificialReefsQueryUrl =
+      'https://gis.myfwc.com/mapping/rest/services/Open_Data/Artificial_Reef_Locations_in_Florida/MapServer/12/query';
+
+  static const String fwcReefHabitatWmsUrl =
+      'https://ocean.floridamarine.org/arcgis/rest/services/Projects_FWC/Unified_Florida_Reef_Tract_Map_FWC/MapServer/WMSServer?';
+
+  static const String fwcStructureInfoText =
+      'Structure where fish often gather. It does not show where fish are right now. Locations come from FWC and are not independently verified. Not for navigation. Coral and some reef areas have fishing and anchoring rules: check FWC and sanctuary regulations before you go.';
 }

@@ -11,6 +11,7 @@ import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
 import '../alerts/alerts_providers.dart';
 import '../map/location_providers.dart';
+import '../map_layers/gibs_date_service.dart';
 import '../map_layers/map_layers_dialog.dart';
 import '../map_layers/map_layers_provider.dart';
 import '../map_layers/tide_providers.dart';
@@ -239,6 +240,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final alertsState = ref.watch(alertsNotifierProvider);
     final waveHourOffset = ref.watch(selectedWaveHourOffsetProvider);
 
+    final sstDateAsync = ref.watch(sstDateProvider);
+    final chlorophyllDateAsync = ref.watch(chlorophyllDateProvider);
+
+    final showSst = activeLayers.contains(MapLayerConfig.seaTemperatureId);
+    final showChlorophyll = activeLayers.contains(MapLayerConfig.chlorophyllId);
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
     final showWaves = activeLayers.contains(MapLayerConfig.wavesId);
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
@@ -279,6 +285,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final isPhoneScreen = MediaQuery.of(context).size.width < 600;
     final shouldShowLegendContent = !isPhoneScreen || _isLegendExpanded;
 
+    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll;
+
     return Stack(
       children: [
         FlutterMap(
@@ -312,6 +320,49 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               urlTemplate: MapLayerConfig.openStreetMapTileUrl,
               userAgentPackageName: 'com.onerevamp.seabound',
             ),
+
+            // NASA GIBS Sea Surface Temperature Layer
+            if (showSst)
+              sstDateAsync.when(
+                data: (dateStr) {
+                  final tileUrl = MapLayerConfig.gibsWmtsTileUrl(
+                    layerIdentifier: MapLayerConfig.gibsSstLayerIdentifier,
+                    dateStr: dateStr,
+                    tileMatrixSet: MapLayerConfig.gibsSstTileMatrixSet,
+                  );
+                  return TileLayer(
+                    urlTemplate: tileUrl,
+                    userAgentPackageName: 'com.onerevamp.seabound',
+                    maxNativeZoom: 8,
+                    tileProvider: NetworkTileProvider(),
+                    tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (e, st) => const SizedBox.shrink(),
+              ),
+
+            // NASA GIBS Chlorophyll-A Layer
+            if (showChlorophyll)
+              chlorophyllDateAsync.when(
+                data: (dateStr) {
+                  final tileUrl = MapLayerConfig.gibsWmtsTileUrl(
+                    layerIdentifier:
+                        MapLayerConfig.gibsChlorophyllLayerIdentifier,
+                    dateStr: dateStr,
+                    tileMatrixSet: MapLayerConfig.gibsChlorophyllTileMatrixSet,
+                  );
+                  return TileLayer(
+                    urlTemplate: tileUrl,
+                    userAgentPackageName: 'com.onerevamp.seabound',
+                    maxNativeZoom: 8,
+                    tileProvider: NetworkTileProvider(),
+                    tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (e, st) => const SizedBox.shrink(),
+              ),
 
             // Depth & Bathymetry Layer (GEBCO colour-shaded WMS + OpenSeaMap seamarks)
             if (showDepth) ...[
@@ -535,6 +586,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
             RichAttributionWidget(
               attributions: [
+                if (showSst || showChlorophyll)
+                  TextSourceAttribution(
+                    'Imagery: NASA GIBS / Worldview',
+                    onTap: () {},
+                  ),
                 if (showWaves)
                   TextSourceAttribution(
                     'Wave data: Open-Meteo / DWD',
@@ -598,7 +654,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ),
 
         // Unified Collapsible Legend Panel for active layers
-        if (showDepth || showWaves)
+        if (hasAnyLegend)
           Positioned(
             top: mostSevereAlert != null ? 58 : 16,
             left: 16,
@@ -612,8 +668,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                constraints: const BoxConstraints(maxWidth: 240),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
+                  color: Colors.black.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -645,6 +702,82 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     ),
                     if (shouldShowLegendContent) ...[
                       const SizedBox(height: 8),
+
+                      // Sea Temperature Legend
+                      if (showSst) ...[
+                        const Text(
+                          'Sea temperature',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        sstDateAsync.when(
+                          data: (d) => Text(
+                            'Image date: ${GibsDateService.formatDisplayDate(d)}',
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 8),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (e, st) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 4),
+                        Image.network(
+                          MapLayerConfig.gibsSstLegendUrl,
+                          height: 16,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
+                          style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 8,
+                              fontStyle: FontStyle.italic),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+
+                      // Chlorophyll Legend
+                      if (showChlorophyll) ...[
+                        const Text(
+                          'Chlorophyll',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        chlorophyllDateAsync.when(
+                          data: (d) => Text(
+                            'Image date: ${GibsDateService.formatDisplayDate(d)}',
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 8),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (e, st) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 4),
+                        Image.network(
+                          MapLayerConfig.gibsChlorophyllLegendUrl,
+                          height: 16,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
+                          style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 8,
+                              fontStyle: FontStyle.italic),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+
+                      // Depth Legend
                       if (showDepth) ...[
                         const Text(
                           'Elevation / Depth',
@@ -686,8 +819,10 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
-                      if (showDepth && showWaves) const SizedBox(height: 8),
+
+                      // Waves Legend
                       if (showWaves) ...[
                         const Text(
                           'Wave Height (ft)',

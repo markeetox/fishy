@@ -40,6 +40,10 @@ class OceanThemeExtension extends ThemeExtension<OceanThemeExtension> {
     redBottom: Color(0xFF2E040C),
   );
 
+  static OceanThemeExtension of(BuildContext context) {
+    return Theme.of(context).extension<OceanThemeExtension>() ?? defaultTokens;
+  }
+
   @override
   OceanThemeExtension copyWith({
     Color? blueTop,

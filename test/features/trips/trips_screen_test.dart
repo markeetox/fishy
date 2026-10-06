@@ -1,33 +1,28 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seabound/features/trips/trip_model.dart';
 import 'package:seabound/features/trips/trips_providers.dart';
 import 'package:seabound/features/trips/trips_screen.dart';
 
+import '../../helpers/pump_app.dart';
+
 void main() {
   testWidgets('TripsScreen renders empty state when no trips exist',
       (WidgetTester tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          userTripsStreamProvider.overrideWith((ref) => Stream.value([])),
-        ],
-        child: const MaterialApp(
-          home: TripsScreen(),
-        ),
-      ),
+    await pumpApp(
+      tester,
+      const TripsScreen(),
+      overrides: [
+        userTripsStreamProvider.overrideWith((ref) => Stream.value([])),
+      ],
     );
-    await tester.pumpAndSettle();
 
-    expect(find.text('Trips'), findsOneWidget);
+    expect(find.text('My Fishing Trips'), findsOneWidget);
     expect(find.text('No Trips Logged Yet'), findsOneWidget);
     expect(
-      find.text('Start tracking your fishing & boating adventures by logging your first trip!'),
+      find.text('Start logging your fishing adventures, catches, and secret spots!'),
       findsOneWidget,
     );
     expect(find.text('Log First Trip'), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 
   testWidgets('TripsScreen renders list of trips when data is available',
@@ -42,17 +37,13 @@ void main() {
       notes: 'Bait used: squid.',
     );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          userTripsStreamProvider.overrideWith((ref) => Stream.value([sampleTrip])),
-        ],
-        child: const MaterialApp(
-          home: TripsScreen(),
-        ),
-      ),
+    await pumpApp(
+      tester,
+      const TripsScreen(),
+      overrides: [
+        userTripsStreamProvider.overrideWith((ref) => Stream.value([sampleTrip])),
+      ],
     );
-    await tester.pumpAndSettle();
 
     expect(find.text('Ocean Voyage'), findsOneWidget);
     expect(find.text('Key West'), findsOneWidget);

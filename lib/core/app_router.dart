@@ -6,6 +6,7 @@ import '../features/alerts/alerts_screen.dart';
 import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
+import '../features/home/home_screen.dart';
 import '../features/profile/about_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/profile_screen.dart';
@@ -18,6 +19,8 @@ import '../features/trips/trip_form_screen.dart';
 import '../features/trips/trips_screen.dart';
 import 'home_shell_screen.dart';
 
+const String initialTabLocation = '/home';
+
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -26,7 +29,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/login',
+    initialLocation: initialTabLocation,
     redirect: (context, state) {
       final isLoading = authState.isLoading;
       if (isLoading) return null;
@@ -43,7 +46,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isAuthRoute) {
-        return '/trips';
+        return initialTabLocation;
       }
 
       return null;
@@ -143,6 +146,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                 ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomeScreen(),
               ),
             ],
           ),

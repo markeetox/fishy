@@ -15,3 +15,6 @@
   - Badges are awarded atomically using `BadgeService.awardBadge()` in `users/{uid}/badges/{badgeId}`.
 - **UI Rules**:
   - UI rules: no AppBar anywhere; use FloatingTopBar. Titles are w800-w900. Tap targets are at least 56 dp. Text contrast is at least 7:1. Blue gradient everywhere except the Profile screens, which are red.
+  - Bottom nav: 5 circular items (Trips, Spots, Home, Alerts, Profile), Home centered and larger (76dp vs 64dp), strip background height is half the circle height (32dp strip).
+  - Spots screen has no top bar or title in map view. Map fills the whole screen with control buttons in 1 row under status bar, followed by a full-width "Community Spots" button.
+  - The Add pin button is a red extended FAB (`#D1142A`, white bold text, 3px white border) at the bottom right.

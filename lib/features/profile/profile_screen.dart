@@ -145,24 +145,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         body: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 24),
+              padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 120),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
                     children: [
-                      // Big bold page title inside content
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Captain Profile',
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
                       // Profile Info
                       CircleAvatar(
                         radius: 52,
@@ -185,11 +173,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                       ),
                       const SizedBox(height: 12),
+
+                      // Username 36 w900
                       Text(
                         username,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -245,14 +237,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Stats Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _StatTile(label: 'Trips', value: '$tripCount'),
-                          _StatTile(label: 'Spots', value: '$spotCount'),
-                          _StatTile(label: 'Pins', value: '${earnedMap.length}'),
-                        ],
+                      // Stats Section on Solid Black (#000000) rounded container with 2px white border
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF000000),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _CircleStatTile(label: 'Trips', value: '$tripCount'),
+                            _CircleStatTile(label: 'Spots', value: '$spotCount'),
+                            _CircleStatTile(label: 'Pins', value: '${earnedMap.length}'),
+                          ],
+                        ),
                       ),
                       const Divider(height: 40, color: Colors.white30),
 
@@ -319,7 +319,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // Floating Top Bar Overlay with Edit, About, and Sign Out Actions
+            // Floating Top Bar Overlay
             Positioned(
               top: 0,
               left: 0,
@@ -362,29 +362,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-class _StatTile extends StatelessWidget {
+class _CircleStatTile extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatTile({required this.label, required this.value});
+  const _CircleStatTile({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: OceanThemeExtension.defaultTokens.surface,
+            border: Border.all(
+              color: OceanThemeExtension.defaultTokens.cyan,
+              width: 3,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: OceanThemeExtension.defaultTokens.cyan,
+                color: Colors.white,
               ),
+            ),
+          ),
         ),
+        const SizedBox(height: 6),
         Text(
           label,
           style: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Colors.white70,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
           ),
         ),
       ],

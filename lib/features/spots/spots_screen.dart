@@ -11,8 +11,8 @@ import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
 import '../alerts/alerts_providers.dart';
 import '../map/location_providers.dart';
+import '../map_layers/map_layers_dialog.dart';
 import '../map_layers/map_layers_provider.dart';
-import '../map_layers/map_layers_sheet.dart';
 import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
 import '../map_layers/waves_provider.dart';
@@ -119,10 +119,10 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
   LatLngBounds? _currentBounds;
   double _currentZoom = 9.0;
   bool _isLocating = false;
+  bool _isLegendExpanded = false;
 
   Timer? _wavesDebounceTimer;
   List<WavePointData>? _wavesData;
-  String? _wavesError;
 
   @override
   void dispose() {
@@ -130,13 +130,10 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     super.dispose();
   }
 
-  void _openLayersSheet() {
-    showModalBottomSheet(
+  void _openLayersDialog() {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => const MapLayersSheet(),
+      builder: (context) => const MapLayersDialog(),
     );
   }
 
@@ -170,10 +167,6 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
       if (_currentZoom < 5.0) return;
 
-      setState(() {
-        _wavesError = null;
-      });
-
       try {
         final wavesService = ref.read(wavesServiceProvider);
         final data = await wavesService.fetchGridWaves(
@@ -188,13 +181,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             _wavesData = data;
           });
         }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _wavesError = e.toString().replaceAll('Exception: ', '');
-          });
-        }
-      }
+      } catch (_) {}
     });
   }
 
@@ -257,6 +244,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
     final showSoundings = activeLayers.contains(MapLayerConfig.depthNumbersId);
     final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
+    final showFishSpots = activeLayers.contains('fish_spots');
+
+    final activeCount = activeLayers.length;
 
     final initialCenter = widget.spots.isNotEmpty
         ? LatLng(widget.spots.first.latitude, widget.spots.first.longitude)
@@ -285,6 +275,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
     final mostSevereAlert =
         alertsState.alerts.isNotEmpty ? alertsState.alerts.first : null;
+
+    final isPhoneScreen = MediaQuery.of(context).size.width < 600;
+    final shouldShowLegendContent = !isPhoneScreen || _isLegendExpanded;
 
     return Stack(
       children: [
@@ -505,39 +498,40 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 error: (error, stackTrace) => const SizedBox.shrink(),
               ),
 
-            // Spot Markers Layer
-            MarkerLayer(
-              markers: widget.spots.map((spot) {
-                return Marker(
-                  point: LatLng(spot.latitude, spot.longitude),
-                  width: 44.0,
-                  height: 44.0,
-                  child: GestureDetector(
-                    onTap: () {
-                      context.push('/spots/${spot.id}');
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.place,
-                        color: Colors.white,
-                        size: 26,
+            // Community Spot Markers Layer
+            if (showFishSpots)
+              MarkerLayer(
+                markers: widget.spots.map((spot) {
+                  return Marker(
+                    point: LatLng(spot.latitude, spot.longitude),
+                    width: 44.0,
+                    height: 44.0,
+                    child: GestureDetector(
+                      onTap: () {
+                        context.push('/spots/${spot.id}');
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.place,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }).toList(),
+              ),
 
             RichAttributionWidget(
               attributions: [
@@ -603,87 +597,126 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Waves Error Banner Overlay
-        if (showWaves && _wavesError != null)
+        // Unified Collapsible Legend Panel for active layers
+        if (showDepth || showWaves)
           Positioned(
             top: mostSevereAlert != null ? 58 : 16,
             left: 16,
-            right: 68,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                      size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Couldn't load wave data",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
+            child: GestureDetector(
+              onTap: () {
+                if (isPhoneScreen) {
+                  setState(() {
+                    _isLegendExpanded = !_isLegendExpanded;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Map Legends',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (isPhoneScreen) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            _isLegendExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    onPressed: () {
-                      if (_currentBounds != null) {
-                        _fetchWavesForBounds(_currentBounds!);
-                      }
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Wave Height Color Scale Legend Widget
-        if (showWaves && _wavesError == null)
-          Positioned(
-            top: mostSevereAlert != null ? 58 : 16,
-            left: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Wave Height (ft)',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _LegendBox(color: Colors.green.shade600, label: '<2'),
-                      const SizedBox(width: 4),
-                      _LegendBox(color: Colors.amber.shade700, label: '2-4'),
-                      const SizedBox(width: 4),
-                      _LegendBox(color: Colors.orange.shade800, label: '4-6'),
-                      const SizedBox(width: 4),
-                      _LegendBox(color: Colors.red.shade700, label: '>6'),
+                    if (shouldShowLegendContent) ...[
+                      const SizedBox(height: 8),
+                      if (showDepth) ...[
+                        const Text(
+                          'Elevation / Depth',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 110,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(2),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF000055),
+                                Color(0xFF0066CC),
+                                Color(0xFF66CCFF),
+                                Color(0xFF009933),
+                                Color(0xFF996633),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const SizedBox(
+                          width: 110,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Deep',
+                                  style: TextStyle(
+                                      color: Colors.white54, fontSize: 8)),
+                              Text('High',
+                                  style: TextStyle(
+                                      color: Colors.white54, fontSize: 8)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (showDepth && showWaves) const SizedBox(height: 8),
+                      if (showWaves) ...[
+                        const Text(
+                          'Wave Height (ft)',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            _LegendBox(
+                                color: Colors.green.shade600, label: '<2'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.amber.shade700, label: '2-4'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.orange.shade800, label: '4-6'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.red.shade700, label: '>6'),
+                          ],
+                        ),
+                      ],
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -722,17 +755,21 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Map Control FABs: Layers & My Location
+        // Map Control FABs: Layers (with Active Count Badge) & My Location
         Positioned(
           top: 16,
           right: 16,
           child: Column(
             children: [
-              FloatingActionButton.small(
-                heroTag: 'map_layers_fab',
-                onPressed: _openLayersSheet,
-                tooltip: 'Map Layers',
-                child: const Icon(Icons.layers_outlined),
+              Badge(
+                isLabelVisible: activeCount > 0,
+                label: Text('$activeCount'),
+                child: FloatingActionButton.small(
+                  heroTag: 'map_layers_fab',
+                  onPressed: _openLayersDialog,
+                  tooltip: 'Map Layers',
+                  child: const Icon(Icons.layers_outlined),
+                ),
               ),
               const SizedBox(height: 8),
               FloatingActionButton.small(

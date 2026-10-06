@@ -1,49 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/map_layer_config.dart';
 import 'map_layer_model.dart';
 
 final availableLayers = [
+  // Ocean Group
+  const MapLayerItem(
+    id: MapLayerConfig.depthBathymetryId,
+    displayName: 'Depth Colors',
+    icon: Icons.water,
+    defaultOn: false,
+    group: 'Ocean',
+  ),
+  const MapLayerItem(
+    id: MapLayerConfig.depthNumbersId,
+    displayName: 'Depth Numbers',
+    icon: Icons.pin_drop_outlined,
+    defaultOn: false,
+    group: 'Ocean',
+  ),
+  const MapLayerItem(
+    id: MapLayerConfig.wavesId,
+    displayName: 'Waves',
+    icon: Icons.tsunami,
+    defaultOn: false,
+    group: 'Ocean',
+  ),
+
+  // Weather Group
+  const MapLayerItem(
+    id: MapLayerConfig.weatherRadarId,
+    displayName: 'Radar',
+    icon: Icons.radar,
+    defaultOn: false,
+    group: 'Weather',
+  ),
+
+  // Tides Group
   const MapLayerItem(
     id: MapLayerConfig.tideStationsId,
     displayName: 'Tide Stations',
     icon: Icons.waves,
     defaultOn: true,
+    group: 'Tides',
   ),
+
+  // Fish Group
   const MapLayerItem(
-    id: MapLayerConfig.wavesId,
-    displayName: 'Waves (Open-Meteo)',
-    icon: Icons.tsunami,
-    defaultOn: false,
-  ),
-  const MapLayerItem(
-    id: MapLayerConfig.depthBathymetryId,
-    displayName: 'Depth & Bathymetry',
-    icon: Icons.water,
-    defaultOn: false,
-  ),
-  const MapLayerItem(
-    id: MapLayerConfig.depthNumbersId,
-    displayName: 'Depth Numbers (NOAA Soundings)',
-    icon: Icons.pin_drop_outlined,
-    defaultOn: false,
-  ),
-  const MapLayerItem(
-    id: MapLayerConfig.weatherRadarId,
-    displayName: 'Weather Radar',
-    icon: Icons.radar,
-    defaultOn: false,
+    id: 'fish_spots',
+    displayName: 'Community Spots',
+    icon: Icons.phishing,
+    defaultOn: true,
+    group: 'Fish',
   ),
 ];
 
 class ActiveMapLayersNotifier extends Notifier<Set<String>> {
+  static const String _prefKey = 'active_map_layers';
+
   @override
   Set<String> build() {
+    _loadFromPrefs();
     return availableLayers
         .where((layer) => layer.defaultOn)
         .map((layer) => layer.id)
         .toSet();
+  }
+
+  Future<void> _loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getStringList(_prefKey);
+      if (saved != null) {
+        state = saved.toSet();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_prefKey, state.toList());
+    } catch (_) {}
   }
 
   void toggleLayer(String id) {
@@ -52,6 +92,12 @@ class ActiveMapLayersNotifier extends Notifier<Set<String>> {
     } else {
       state = {...state, id};
     }
+    _saveToPrefs();
+  }
+
+  void clearAll() {
+    state = {};
+    _saveToPrefs();
   }
 
   bool isEnabled(String id) => state.contains(id);

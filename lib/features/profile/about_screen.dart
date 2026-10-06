@@ -34,6 +34,14 @@ class AboutScreen extends StatelessWidget {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.public),
+                          title: Text('NASA GIBS / Worldview'),
+                          subtitle: Text(
+                              'Sea Surface Temperature (GHRSST MUR) & Chlorophyll-A (VIIRS) Satellite Imagery'),
+                        ),
+                        Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
                           leading: Icon(Icons.tsunami),
                           title: Text('Open-Meteo / DWD'),
                           subtitle: Text(

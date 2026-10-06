@@ -5,6 +5,8 @@ class MapLayerConfig {
   static const String depthNumbersId = 'depth_numbers';
   static const String weatherRadarId = 'weather_radar';
   static const String wavesId = 'waves';
+  static const String seaTemperatureId = 'sea_temperature';
+  static const String chlorophyllId = 'chlorophyll';
 
   // URLs
   static const String openStreetMapTileUrl =
@@ -38,4 +40,26 @@ class MapLayerConfig {
   // TODO: Open-Meteo is free for non-commercial use only. A paid API key / subscription plan is required if Seabound is commercialized or monetized.
   static const String openMeteoMarineUrl =
       'https://marine-api.open-meteo.com/v1/marine';
+
+  // NASA GIBS WMTS EPSG:3857 Layer Identifiers
+  static const String gibsSstLayerIdentifier =
+      'GHRSST_L4_MUR_Sea_Surface_Temperature';
+  static const String gibsChlorophyllLayerIdentifier =
+      'VIIRS_SNPP_Chlorophyll_A';
+
+  static const String gibsSstTileMatrixSet = '1km';
+  static const String gibsChlorophyllTileMatrixSet = '1km';
+
+  static const String gibsSstLegendUrl =
+      'https://gibs.earthdata.nasa.gov/legends/GHRSST_MUR_SST_V.png';
+  static const String gibsChlorophyllLegendUrl =
+      'https://gibs.earthdata.nasa.gov/legends/VIIRS_SNPP_Chlorophyll_A_V.png';
+
+  static String gibsWmtsTileUrl({
+    required String layerIdentifier,
+    required String dateStr,
+    required String tileMatrixSet,
+  }) {
+    return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/$layerIdentifier/default/$dateStr/$tileMatrixSet/{z}/{y}/{x}.png';
+  }
 }

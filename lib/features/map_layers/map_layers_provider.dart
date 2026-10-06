@@ -6,6 +6,22 @@ import '../../core/map_layer_config.dart';
 import 'map_layer_model.dart';
 
 final availableLayers = [
+  // Ocean Conditions Group
+  const MapLayerItem(
+    id: MapLayerConfig.seaTemperatureId,
+    displayName: 'Sea temperature',
+    icon: Icons.device_thermostat,
+    defaultOn: false,
+    group: 'Ocean conditions',
+  ),
+  const MapLayerItem(
+    id: MapLayerConfig.chlorophyllId,
+    displayName: 'Chlorophyll',
+    icon: Icons.opacity,
+    defaultOn: false,
+    group: 'Ocean conditions',
+  ),
+
   // Ocean Group
   const MapLayerItem(
     id: MapLayerConfig.depthBathymetryId,

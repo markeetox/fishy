@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +12,7 @@ import '../../core/map_layer_config.dart';
 import '../../core/navigation_disclaimer.dart';
 import '../alerts/alerts_providers.dart';
 import '../map/location_providers.dart';
+import '../map_layers/artificial_reefs_service.dart';
 import '../map_layers/gibs_date_service.dart';
 import '../map_layers/map_layers_dialog.dart';
 import '../map_layers/map_layers_provider.dart';
@@ -125,9 +127,14 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
   Timer? _wavesDebounceTimer;
   List<WavePointData>? _wavesData;
 
+  Timer? _reefsDebounceTimer;
+  List<ArtificialReefPoint>? _reefsData;
+  String? _reefsError;
+
   @override
   void dispose() {
     _wavesDebounceTimer?.cancel();
+    _reefsDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -158,6 +165,16 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     );
   }
 
+  void _showReefDetailSheet(ArtificialReefPoint reef) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => _ReefDetailSheet(reef: reef),
+    );
+  }
+
   void _fetchWavesForBounds(LatLngBounds bounds) {
     _wavesDebounceTimer?.cancel();
     _wavesDebounceTimer = Timer(const Duration(milliseconds: 800), () async {
@@ -183,6 +200,44 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           });
         }
       } catch (_) {}
+    });
+  }
+
+  void _fetchReefsForBounds(LatLngBounds bounds) {
+    _reefsDebounceTimer?.cancel();
+    _reefsDebounceTimer = Timer(const Duration(milliseconds: 800), () async {
+      if (!mounted) return;
+
+      final activeLayers = ref.read(activeMapLayersProvider);
+      if (!activeLayers.contains(MapLayerConfig.artificialReefsId)) return;
+
+      if (_currentZoom < 7.0) return;
+
+      setState(() {
+        _reefsError = null;
+      });
+
+      try {
+        final reefsService = ref.read(artificialReefsServiceProvider);
+        final points = await reefsService.fetchReefsInBounds(
+          minLat: bounds.south,
+          maxLat: bounds.north,
+          minLng: bounds.west,
+          maxLng: bounds.east,
+        );
+
+        if (mounted) {
+          setState(() {
+            _reefsData = points;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _reefsError = e.toString().replaceAll('Exception: ', '');
+          });
+        }
+      }
     });
   }
 
@@ -243,6 +298,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final sstDateAsync = ref.watch(sstDateProvider);
     final chlorophyllDateAsync = ref.watch(chlorophyllDateProvider);
 
+    final showArtificialReefs = activeLayers.contains(MapLayerConfig.artificialReefsId);
+    final showReefHabitat = activeLayers.contains(MapLayerConfig.reefHabitatId);
     final showSst = activeLayers.contains(MapLayerConfig.seaTemperatureId);
     final showChlorophyll = activeLayers.contains(MapLayerConfig.chlorophyllId);
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
@@ -259,8 +316,13 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         : const LatLng(25.7617, -80.1918);
 
     ref.listen<Set<String>>(activeMapLayersProvider, (prev, next) {
-      if (next.contains(MapLayerConfig.wavesId) && _currentBounds != null) {
-        _fetchWavesForBounds(_currentBounds!);
+      if (_currentBounds != null) {
+        if (next.contains(MapLayerConfig.wavesId)) {
+          _fetchWavesForBounds(_currentBounds!);
+        }
+        if (next.contains(MapLayerConfig.artificialReefsId)) {
+          _fetchReefsForBounds(_currentBounds!);
+        }
       }
     });
 
@@ -285,7 +347,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final isPhoneScreen = MediaQuery.of(context).size.width < 600;
     final shouldShowLegendContent = !isPhoneScreen || _isLegendExpanded;
 
-    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll;
+    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll || showArtificialReefs || showReefHabitat;
 
     return Stack(
       children: [
@@ -300,18 +362,16 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 _currentBounds = bounds;
                 _currentZoom = _mapController.camera.zoom;
               });
-              if (showWaves) {
-                _fetchWavesForBounds(bounds);
-              }
+              if (showWaves) _fetchWavesForBounds(bounds);
+              if (showArtificialReefs) _fetchReefsForBounds(bounds);
             },
             onPositionChanged: (position, hasGesture) {
               setState(() {
                 _currentBounds = position.visibleBounds;
                 _currentZoom = position.zoom;
               });
-              if (showWaves) {
-                _fetchWavesForBounds(position.visibleBounds);
-              }
+              if (showWaves) _fetchWavesForBounds(position.visibleBounds);
+              if (showArtificialReefs) _fetchReefsForBounds(position.visibleBounds);
             },
           ),
           children: [
@@ -364,6 +424,19 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 error: (e, st) => const SizedBox.shrink(),
               ),
 
+            // FWC Unified Reef Habitat Polygon Overlay (WMS)
+            if (showReefHabitat)
+              TileLayer(
+                wmsOptions: WMSTileLayerOptions(
+                  baseUrl: MapLayerConfig.fwcReefHabitatWmsUrl,
+                  layers: const ['0', '1', '2', '3', '4'],
+                  transparent: true,
+                  format: 'image/png32',
+                ),
+                tileProvider: NetworkTileProvider(),
+                tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
+              ),
+
             // Depth & Bathymetry Layer (GEBCO colour-shaded WMS + OpenSeaMap seamarks)
             if (showDepth) ...[
               TileLayer(
@@ -405,6 +478,40 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 ),
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
+              ),
+
+            // FWC Artificial Reefs Marker Layer
+            if (showArtificialReefs && _reefsData != null && _currentZoom >= 7.0)
+              MarkerLayer(
+                markers: _reefsData!.map((reef) {
+                  return Marker(
+                    point: LatLng(reef.latitude, reef.longitude),
+                    width: 28.0,
+                    height: 28.0,
+                    child: GestureDetector(
+                      onTap: () => _showReefDetailSheet(reef),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.brown.shade700,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.anchor,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
 
             // Waves Grid Markers Layer
@@ -586,6 +693,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
             RichAttributionWidget(
               attributions: [
+                if (showArtificialReefs || showReefHabitat)
+                  TextSourceAttribution(
+                    'Data: Florida Fish and Wildlife Conservation Commission (FWC)',
+                    onTap: () {},
+                  ),
                 if (showSst || showChlorophyll)
                   TextSourceAttribution(
                     'Imagery: NASA GIBS / Worldview',
@@ -653,6 +765,51 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
+        // Reefs Error Banner Overlay
+        if (showArtificialReefs && _reefsError != null)
+          Positioned(
+            top: mostSevereAlert != null ? 58 : 16,
+            left: 16,
+            right: 68,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Couldn't load reef data",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      if (_currentBounds != null) {
+                        _fetchReefsForBounds(_currentBounds!);
+                      }
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         // Unified Collapsible Legend Panel for active layers
         if (hasAnyLegend)
           Positioned(
@@ -668,7 +825,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                constraints: const BoxConstraints(maxWidth: 240),
+                constraints: const BoxConstraints(maxWidth: 250),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(8),
@@ -702,6 +859,32 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     ),
                     if (shouldShowLegendContent) ...[
                       const SizedBox(height: 8),
+
+                      // Artificial Reefs & Habitat Info
+                      if (showArtificialReefs || showReefHabitat) ...[
+                        Text(
+                          showArtificialReefs && showReefHabitat
+                              ? 'Reefs & Habitat'
+                              : showArtificialReefs
+                                  ? 'Artificial Reefs'
+                                  : 'Reef Habitat',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          MapLayerConfig.fwcStructureInfoText,
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 8,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
                       // Sea Temperature Legend
                       if (showSst) ...[
@@ -962,6 +1145,165 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
       default:
         return Colors.blueGrey.shade800;
     }
+  }
+}
+
+class _ReefDetailSheet extends StatelessWidget {
+  final ArtificialReefPoint reef;
+
+  const _ReefDetailSheet({required this.reef});
+
+  @override
+  Widget build(BuildContext context) {
+    final latStr = reef.latitude.toStringAsFixed(5);
+    final lngStr = reef.longitude.toStringAsFixed(5);
+    final coordStr = '$latStr, $lngStr';
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    reef.reefName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (reef.primaryMaterial != null) ...[
+                      _ReefMetric(
+                        label: 'Material / Type',
+                        value: reef.primaryMaterial!,
+                        icon: Icons.construction,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (reef.waterDepthFt != null) ...[
+                      _ReefMetric(
+                        label: 'Water Depth',
+                        value: '${reef.waterDepthFt!} ft',
+                        icon: Icons.water,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (reef.deploymentDate != null) ...[
+                      _ReefMetric(
+                        label: 'Deployment Date',
+                        value: reef.deploymentDate!,
+                        icon: Icons.calendar_today,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (reef.countyAgency != null) ...[
+                      _ReefMetric(
+                        label: 'County / Agency',
+                        value: reef.countyAgency!,
+                        icon: Icons.account_balance,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _ReefMetric(
+                          label: 'Coordinates',
+                          value: coordStr,
+                          icon: Icons.pin_drop,
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: coordStr));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Coordinates copied to clipboard!'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 16),
+                          label: const Text('Copy'),
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              MapLayerConfig.fwcStructureInfoText,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReefMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _ReefMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 

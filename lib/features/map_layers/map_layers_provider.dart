@@ -6,6 +6,22 @@ import '../../core/map_layer_config.dart';
 import 'map_layer_model.dart';
 
 final availableLayers = [
+  // Structure Group
+  const MapLayerItem(
+    id: MapLayerConfig.artificialReefsId,
+    displayName: 'Artificial reefs',
+    icon: Icons.anchor,
+    defaultOn: false,
+    group: 'Structure',
+  ),
+  const MapLayerItem(
+    id: MapLayerConfig.reefHabitatId,
+    displayName: 'Reef habitat',
+    icon: Icons.grass,
+    defaultOn: false,
+    group: 'Structure',
+  ),
+
   // Ocean Conditions Group
   const MapLayerItem(
     id: MapLayerConfig.seaTemperatureId,

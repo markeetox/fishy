@@ -34,6 +34,14 @@ class AboutScreen extends StatelessWidget {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.anchor),
+                          title: Text('Florida Fish & Wildlife Conservation Commission (FWC)'),
+                          subtitle: Text(
+                              'Artificial Reef Locations & Unified Florida Reef Tract Habitat Map'),
+                        ),
+                        Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
                           leading: Icon(Icons.public),
                           title: Text('NASA GIBS / Worldview'),
                           subtitle: Text(

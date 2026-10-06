@@ -13,3 +13,5 @@
   - Never store user email addresses in Firestore `users/{uid}` documents.
   - Usernames must be validated using `Catalog.validateUsername()` (3-20 chars, alphanumeric + underscores, blocklist check) and claimed via Firestore transaction in `/usernames/{username}`.
   - Badges are awarded atomically using `BadgeService.awardBadge()` in `users/{uid}/badges/{badgeId}`.
+- **UI Rules**:
+  - UI rules: no AppBar anywhere; use FloatingTopBar. Titles are w800-w900. Tap targets are at least 56 dp. Text contrast is at least 7:1. Blue gradient everywhere except the Profile screens, which are red.

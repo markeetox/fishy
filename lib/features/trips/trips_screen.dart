@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import 'trip_model.dart';
 import 'trips_providers.dart';
 
@@ -13,79 +16,127 @@ class TripsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tripsAsync = ref.watch(userTripsStreamProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trips'),
-      ),
-      body: tripsAsync.when(
-        data: (trips) {
-          if (trips.isEmpty) {
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.sailing_outlined,
-                      size: 80,
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No Trips Logged Yet',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Start tracking your fishing & boating adventures by logging your first trip!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 88, bottom: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Fishing Trips',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        tripsAsync.when(
+                          data: (trips) {
+                            if (trips.isEmpty) {
+                              return _buildEmptyState(context);
+                            }
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: trips.length,
+                              itemBuilder: (context, index) {
+                                final trip = trips[index];
+                                return _TripCard(trip: trip);
+                              },
+                            );
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Center(child: CircularProgressIndicator()),
                           ),
-                      textAlign: TextAlign.center,
+                          error: (error, stackTrace) => Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Error loading trips: $error',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.push('/trips/add');
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Log First Trip'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: trips.length,
-            itemBuilder: (context, index) {
-              final trip = trips[index];
-              return _TripCard(trip: trip);
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Error loading trips: $error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-          ),
+
+            // Floating Top Bar Overlay with Log Trip action
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(
+                actions: [
+                  FloatingTopBarButton(
+                    icon: Icons.add,
+                    tooltip: 'Log Trip',
+                    onPressed: () {
+                      context.push('/trips/add');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/trips/add');
-        },
-        tooltip: 'Log Trip',
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.directions_boat_outlined,
+              size: 80,
+              color: OceanThemeExtension.defaultTokens.cyan.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Trips Logged Yet',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Start logging your fishing adventures, catches, and secret spots!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white70,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.push('/trips/add');
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Log First Trip'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -98,13 +149,12 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat.yMMMd().format(trip.date);
+    final formattedDate = DateFormat.yMMMMd().format(trip.date);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 1,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           context.push('/trips/${trip.id}');
         },
@@ -120,7 +170,7 @@ class _TripCard extends StatelessWidget {
                     child: Text(
                       trip.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -129,18 +179,18 @@ class _TripCard extends StatelessWidget {
                   Text(
                     formattedDate,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
+                          color: Colors.white70,
                         ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   Icon(
                     Icons.place_outlined,
                     size: 16,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: OceanThemeExtension.defaultTokens.cyan,
                   ),
                   const SizedBox(width: 4),
                   Expanded(
@@ -158,11 +208,11 @@ class _TripCard extends StatelessWidget {
                 Wrap(
                   spacing: 6.0,
                   runSpacing: 4.0,
-                  children: trip.species.map((s) {
+                  children: trip.species.map((species) {
                     return Chip(
                       label: Text(
-                        s,
-                        style: const TextStyle(fontSize: 12),
+                        species,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       padding: EdgeInsets.zero,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

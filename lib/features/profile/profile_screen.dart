@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import '../auth/auth_providers.dart';
 import '../spots/spots_providers.dart';
 import '../trips/trips_providers.dart';
@@ -32,10 +35,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = authState.asData?.value;
     if (user != null) {
       final repository = ref.read(profileRepositoryProvider);
-      // Clean up legacy email field from user doc on open
       await repository.removeEmailFromUserDoc(user.uid);
 
-      // Check badge qualifications
       final badgeService = ref.read(badgeServiceProvider);
       final result = await badgeService.checkAllBadges();
 
@@ -62,7 +63,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Text(
                 badge.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                     ),
               ),
               const SizedBox(height: 8),
@@ -73,15 +74,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 12),
               Chip(
-                label: Text('+${badge.xp} XP'),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                label: Text('+${badge.xp} XP',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: OceanThemeExtension.defaultTokens.surface,
               ),
               if (isEarned && formattedDate != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Earned on $formattedDate',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Colors.white70,
                       ),
                 ),
               ],
@@ -115,7 +117,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'Captain';
     final avatarId = userDoc?['avatarId'] as String?;
 
-    // Calculate total XP from earned badges catalog
     int totalXp = 0;
     for (final badgeId in earnedMap.keys) {
       final b = Catalog.getBadgeById(badgeId);
@@ -138,183 +139,223 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             .length ??
         0;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Captain Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit Profile',
-            onPressed: () {
-              context.push('/profile/edit');
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              children: [
-                // Header Profile Info
-                CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: avatarId != null && avatarId.isNotEmpty
-                      ? Image.asset(
-                          'assets/avatars/$avatarId.png',
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.person,
-                              size: 56,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            );
-                          },
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 56,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  username,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$title • Level $level',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 16),
-
-                // XP Progress Bar
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Level $level Progress',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        Text(
-                          '$totalXp / $nextLevelXp XP',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+    return GradientBackground.red(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    children: [
+                      // Big bold page title inside content
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Captain Profile',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
                               ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: progressFraction,
-                        minHeight: 10,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
-                // Stats Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _StatTile(label: 'Trips', value: '$tripCount'),
-                    _StatTile(label: 'Spots', value: '$spotCount'),
-                    _StatTile(label: 'Pins', value: '${earnedMap.length}'),
-                  ],
-                ),
-                const Divider(height: 40),
+                      // Profile Info
+                      CircleAvatar(
+                        radius: 52,
+                        backgroundColor: OceanThemeExtension.defaultTokens.surface,
+                        child: avatarId != null && avatarId.isNotEmpty
+                            ? Image.asset(
+                                'assets/avatars/$avatarId.png',
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: Colors.white,
+                                  );
+                                },
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        username,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$title • Level $level',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: OceanThemeExtension.defaultTokens.cyan,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
 
-                // Pins Grid Section
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Earned Pins & Badges',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 100,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: Catalog.starterBadges.length,
-                  itemBuilder: (context, index) {
-                    final badge = Catalog.starterBadges[index];
-                    final earnedAt = earnedMap[badge.id];
-                    final isEarned = earnedAt != null;
-
-                    return GestureDetector(
-                      onTap: () => _showPinDetailDialog(context, badge, earnedAt),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      // XP Progress Bar with Dark Outline
+                      Column(
                         children: [
-                          BadgePin(
-                            badge: badge,
-                            isEarned: isEarned,
-                            size: 56,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Level $level Progress',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                '$totalXp / $nextLevelXp XP',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            badge.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontWeight: isEarned
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: isEarned
-                                      ? Theme.of(context).colorScheme.onSurface
-                                      : Theme.of(context).colorScheme.outline,
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.black.withValues(alpha: 0.8), width: 2),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: progressFraction,
+                                minHeight: 12,
+                                backgroundColor: Colors.black45,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  OceanThemeExtension.defaultTokens.cyan,
                                 ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
-                // Action Links
-                OutlinedButton.icon(
-                  onPressed: () {
-                    context.push('/about');
-                  },
-                  icon: const Icon(Icons.info_outline),
-                  label: const Text('About & Data Sources'),
+                      // Stats Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _StatTile(label: 'Trips', value: '$tripCount'),
+                          _StatTile(label: 'Spots', value: '$spotCount'),
+                          _StatTile(label: 'Pins', value: '${earnedMap.length}'),
+                        ],
+                      ),
+                      const Divider(height: 40, color: Colors.white30),
+
+                      // Pins Grid Section
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Earned Pins & Badges',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 110,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.85,
+                        ),
+                        itemCount: Catalog.starterBadges.length,
+                        itemBuilder: (context, index) {
+                          final badge = Catalog.starterBadges[index];
+                          final earnedAt = earnedMap[badge.id];
+                          final isEarned = earnedAt != null;
+
+                          return GestureDetector(
+                            onTap: () => _showPinDetailDialog(context, badge, earnedAt),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                BadgePin(
+                                  badge: badge,
+                                  isEarned: isEarned,
+                                  size: 56,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  badge.name,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isEarned
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: isEarned
+                                        ? Colors.white
+                                        : Colors.white60,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final authRepo = ref.read(authRepositoryProvider);
-                    await authRepo.signOut();
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Sign Out'),
-                ),
-              ],
+              ),
             ),
-          ),
+
+            // Floating Top Bar Overlay with Edit, About, and Sign Out Actions
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(
+                isRedScreen: true,
+                actions: [
+                  FloatingTopBarButton(
+                    icon: Icons.edit_outlined,
+                    tooltip: 'Edit Profile',
+                    isRedScreen: true,
+                    onPressed: () {
+                      context.push('/profile/edit');
+                    },
+                  ),
+                  FloatingTopBarButton(
+                    icon: Icons.info_outline,
+                    tooltip: 'About & Data Sources',
+                    isRedScreen: true,
+                    onPressed: () {
+                      context.push('/about');
+                    },
+                  ),
+                  FloatingTopBarButton(
+                    icon: Icons.logout,
+                    tooltip: 'Sign Out',
+                    isRedScreen: true,
+                    onPressed: () async {
+                      final authRepo = ref.read(authRepositoryProvider);
+                      await authRepo.signOut();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -334,15 +375,17 @@ class _StatTile extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w900,
+                color: OceanThemeExtension.defaultTokens.cyan,
               ),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.white70,
+          ),
         ),
       ],
     );

@@ -43,7 +43,34 @@ class BadgePin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final borderRingColor = isEarned ? Colors.white : Colors.grey.shade600;
+
+    Widget badgeImageWidget = Image.asset(
+      badge.imageAsset,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        // Fallback colored circle with icon when asset PNG is not present
+        return Center(
+          child: Icon(
+            _getFallbackIcon(badge.id),
+            size: size * 0.5,
+            color: isEarned ? Colors.white : Colors.grey.shade400,
+          ),
+        );
+      },
+    );
+
+    if (!isEarned) {
+      badgeImageWidget = ColorFiltered(
+        colorFilter: const ColorFilter.matrix(<double>[
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0,      0,      0,      0.5, 0,
+        ]),
+        child: badgeImageWidget,
+      );
+    }
 
     return Stack(
       alignment: Alignment.center,
@@ -53,30 +80,20 @@ class BadgePin extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isEarned
-                ? primaryColor.withValues(alpha: 0.15)
-                : Colors.grey.shade300,
+            color: isEarned ? Colors.blue.shade900 : Colors.grey.shade800,
             border: Border.all(
-              color: isEarned ? primaryColor : Colors.grey.shade400,
-              width: 2,
+              color: borderRingColor,
+              width: 3,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: ClipOval(
-            child: Image.asset(
-              badge.imageAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback colored circle with icon when asset PNG is not present
-                return Center(
-                  child: Icon(
-                    _getFallbackIcon(badge.id),
-                    size: size * 0.5,
-                    color: isEarned ? primaryColor : Colors.grey.shade600,
-                  ),
-                );
-              },
-            ),
-          ),
+          child: ClipOval(child: badgeImageWidget),
         ),
         if (!isEarned)
           Container(

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
+import '../../core/gradient_background.dart';
 import 'badge_pin.dart';
 import 'catalog.dart';
 import 'profile_providers.dart';
@@ -28,7 +31,7 @@ class PublicProfileScreen extends ConsumerWidget {
               Text(
                 badge.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                     ),
               ),
               const SizedBox(height: 8),
@@ -39,15 +42,16 @@ class PublicProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Chip(
-                label: Text('+${badge.xp} XP'),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                label: Text('+${badge.xp} XP',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: OceanThemeExtension.defaultTokens.surface,
               ),
               if (isEarned && formattedDate != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Earned on $formattedDate',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Colors.white70,
                       ),
                 ),
               ],
@@ -69,150 +73,175 @@ class PublicProfileScreen extends ConsumerWidget {
     final userDocAsync = ref.watch(publicProfileDocProvider(userId));
     final earnedBadgesAsync = ref.watch(publicProfileBadgesProvider(userId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Captain Profile'),
-      ),
-      body: userDocAsync.when(
-        data: (userDoc) {
-          if (userDoc == null) {
-            return const Center(child: Text('User profile not found.'));
-          }
+    return GradientBackground.red(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            userDocAsync.when(
+              data: (userDoc) {
+                if (userDoc == null) {
+                  return const Center(child: Text('User profile not found.'));
+                }
 
-          final username = userDoc['username'] as String? ?? 'Captain';
-          final avatarId = userDoc['avatarId'] as String?;
-          final earnedMap = earnedBadgesAsync.asData?.value ?? {};
+                final username = userDoc['username'] as String? ?? 'Captain';
+                final avatarId = userDoc['avatarId'] as String?;
+                final earnedMap = earnedBadgesAsync.asData?.value ?? {};
 
-          // Calculate total XP & level from earned badges
-          int totalXp = 0;
-          for (final badgeId in earnedMap.keys) {
-            final b = Catalog.getBadgeById(badgeId);
-            if (b != null) totalXp += b.xp;
-          }
+                int totalXp = 0;
+                for (final badgeId in earnedMap.keys) {
+                  final b = Catalog.getBadgeById(badgeId);
+                  if (b != null) totalXp += b.xp;
+                }
 
-          final level = Catalog.getLevelFromXp(totalXp);
-          final title = Catalog.getTitleFromLevel(level);
+                final level = Catalog.getLevelFromXp(totalXp);
+                final title = Catalog.getTitleFromLevel(level);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primaryContainer,
-                      child: avatarId != null && avatarId.isNotEmpty
-                          ? Image.asset(
-                              'assets/avatars/$avatarId.png',
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.person,
-                                  size: 56,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                );
-                              },
-                            )
-                          : Icon(
-                              Icons.person,
-                              size: 56,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.only(
+                      top: 88, left: 24, right: 24, bottom: 24),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Captain Profile',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
                             ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      username,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
                           ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$title • Level $level',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(height: 20),
+                          CircleAvatar(
+                            radius: 52,
+                            backgroundColor:
+                                OceanThemeExtension.defaultTokens.surface,
+                            child: avatarId != null && avatarId.isNotEmpty
+                                ? Image.asset(
+                                    'assets/avatars/$avatarId.png',
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.white,
+                                      );
+                                    },
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: Colors.white,
+                                  ),
                           ),
-                    ),
-                    const Divider(height: 40),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Earned Pins & Badges',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          const SizedBox(height: 12),
+                          Text(
+                            username,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$title • Level $level',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  color:
+                                      OceanThemeExtension.defaultTokens.cyan,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const Divider(height: 40, color: Colors.white30),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Earned Pins & Badges',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                             ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 100,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.85,
-                      ),
-                      itemCount: Catalog.starterBadges.length,
-                      itemBuilder: (context, index) {
-                        final badge = Catalog.starterBadges[index];
-                        final earnedAt = earnedMap[badge.id];
-                        final isEarned = earnedAt != null;
+                          ),
+                          const SizedBox(height: 16),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 110,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childAspectRatio: 0.85,
+                            ),
+                            itemCount: Catalog.starterBadges.length,
+                            itemBuilder: (context, index) {
+                              final badge = Catalog.starterBadges[index];
+                              final earnedAt = earnedMap[badge.id];
+                              final isEarned = earnedAt != null;
 
-                        return GestureDetector(
-                          onTap: () =>
-                              _showPinDetailDialog(context, badge, earnedAt),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              BadgePin(
-                                badge: badge,
-                                isEarned: isEarned,
-                                size: 56,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                badge.name,
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontWeight: isEarned
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      color: isEarned
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .outline,
+                              return GestureDetector(
+                                onTap: () => _showPinDetailDialog(
+                                    context, badge, earnedAt),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    BadgePin(
+                                      badge: badge,
+                                      isEarned: isEarned,
+                                      size: 56,
                                     ),
-                              ),
-                            ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      badge.name,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isEarned
+                                            ? FontWeight.w800
+                                            : FontWeight.w600,
+                                        color: isEarned
+                                            ? Colors.white
+                                            : Colors.white60,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, st) =>
+                  Center(child: Text('Error loading profile: $e')),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error loading profile: $e')),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FloatingTopBar(isRedScreen: true),
+            ),
+          ],
+        ),
       ),
     );
   }

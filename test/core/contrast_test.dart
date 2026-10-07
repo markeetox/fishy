@@ -55,5 +55,12 @@ void main() {
       final ratio = _calculateContrastRatio(tokens.textSecondary, lighterRedBg);
       expect(ratio, greaterThanOrEqualTo(4.5));
     });
+
+    test('White text against Red FAB (#D1142A) background has >= 4.5:1 contrast', () {
+      const redFabColor = Color(0xFFD1142A);
+      const whiteText = Colors.white;
+      final ratio = _calculateContrastRatio(whiteText, redFabColor);
+      expect(ratio, greaterThanOrEqualTo(4.5));
+    });
   });
 }

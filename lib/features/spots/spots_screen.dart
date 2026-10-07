@@ -54,83 +54,39 @@ class _SpotsScreenState extends ConsumerState<SpotsScreen> {
     return GradientBackground.blue(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 88),
-              child: spotsAsync.when(
-                data: (spots) {
-                  if (_selectedView == ViewMode.map) {
-                    return _SpotsMapView(spots: spots);
-                  } else {
-                    return _SpotsListView(spots: spots);
-                  }
+        body: spotsAsync.when(
+          data: (spots) {
+            if (_selectedView == ViewMode.map) {
+              return _SpotsMapView(
+                spots: spots,
+                onToggleView: () {
+                  setState(() {
+                    _selectedView = ViewMode.list;
+                  });
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stackTrace) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Error loading spots: $error',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
+              );
+            } else {
+              return _SpotsListView(
+                spots: spots,
+                onToggleView: () {
+                  setState(() {
+                    _selectedView = ViewMode.map;
+                  });
+                },
+              );
+            }
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Error loading spots: $error',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
-
-            // Floating Top Bar Overlay
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: FloatingTopBar(
-                leading: Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: OceanThemeExtension.defaultTokens.surface,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: OceanThemeExtension.defaultTokens.cyan,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Fishing Spots',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                  ),
-                ),
-                actions: [
-                  FloatingTopBarButton(
-                    icon: _selectedView == ViewMode.map
-                        ? Icons.list_outlined
-                        : Icons.map_outlined,
-                    tooltip: 'Toggle Map / List View',
-                    onPressed: () {
-                      setState(() {
-                        _selectedView = _selectedView == ViewMode.map
-                            ? ViewMode.list
-                            : ViewMode.map;
-                      });
-                    },
-                  ),
-                  FloatingTopBarButton(
-                    icon: Icons.add_location_alt,
-                    tooltip: 'Add Spot',
-                    onPressed: () {
-                      context.push('/spots/add');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -139,8 +95,12 @@ class _SpotsScreenState extends ConsumerState<SpotsScreen> {
 
 class _SpotsMapView extends ConsumerStatefulWidget {
   final List<Spot> spots;
+  final VoidCallback onToggleView;
 
-  const _SpotsMapView({required this.spots});
+  const _SpotsMapView({
+    required this.spots,
+    required this.onToggleView,
+  });
 
   @override
   ConsumerState<_SpotsMapView> createState() => _SpotsMapViewState();
@@ -258,6 +218,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         if (mounted) {
           setState(() {
             _reefsData = points;
+            _reefsError = null;
           });
         }
       } catch (e) {
@@ -380,6 +341,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
     return Stack(
       children: [
+        // Map Fills Whole Screen
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
@@ -746,12 +708,231 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
+        // TOP CONTROLS OVERLAY - UNDER STATUS BAR
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                children: [
+                  // Row 1: Map Control Buttons (Layers, My Location, Refresh)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: _openLayersDialog,
+                          borderRadius: BorderRadius.circular(28),
+                          child: Container(
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: OceanThemeExtension.defaultTokens.surface,
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: OceanThemeExtension.defaultTokens.cyan,
+                                width: 2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black45,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.layers_outlined, size: 24, color: Colors.white),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Layers',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                                ),
+                                if (activeCount > 0) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF00E5FF),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '$activeCount',
+                                      style: const TextStyle(
+                                        color: Color(0xFF001018),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _isLocating ? null : _centerOnMyLocation,
+                          borderRadius: BorderRadius.circular(28),
+                          child: Container(
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: OceanThemeExtension.defaultTokens.surface,
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: OceanThemeExtension.defaultTokens.cyan,
+                                width: 2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black45,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _isLocating
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.my_location, size: 24, color: Colors.white),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Location',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Row 2: FULL-WIDTH "Community Spots" Button opening Spots List view
+                  InkWell(
+                    onTap: widget.onToggleView,
+                    borderRadius: BorderRadius.circular(28),
+                    child: Container(
+                      height: 56,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: OceanThemeExtension.defaultTokens.surface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: OceanThemeExtension.defaultTokens.cyan,
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.list_outlined, size: 24, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Community Spots',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Artificial Reefs Layer Error Banner Overlay
+        if (showArtificialReefs && _reefsError != null)
+          Positioned(
+            top: mostSevereAlert != null ? 190 : 140,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Couldn't load reef data",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final bounds = _currentBounds ?? _mapController.camera.visibleBounds;
+                      _fetchReefsForBounds(bounds);
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         // Slim Weather Alert Banner Overlay at top of map
         if (mostSevereAlert != null)
           Positioned(
-            top: 12,
-            left: 12,
-            right: 68,
+            top: 140,
+            left: 16,
+            right: 16,
             child: GestureDetector(
               onTap: () {
                 context.go('/alerts');
@@ -794,55 +975,11 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Reefs Error Banner Overlay
-        if (showArtificialReefs && _reefsError != null)
-          Positioned(
-            top: mostSevereAlert != null ? 58 : 16,
-            left: 16,
-            right: 68,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                      size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Couldn't load reef data",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    onPressed: () {
-                      if (_currentBounds != null) {
-                        _fetchReefsForBounds(_currentBounds!);
-                      }
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
         // Unified Collapsible Legend Panel for active layers
         if (hasAnyLegend)
           Positioned(
-            top: mostSevereAlert != null ? 58 : 16,
+            top: (mostSevereAlert != null ? 186 : 140) +
+                (showArtificialReefs && _reefsError != null ? 50 : 0),
             left: 16,
             child: GestureDetector(
               onTap: () {
@@ -1072,7 +1209,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         // Waves Time Control Widget Bar (Now, +3h, +6h, +12h, +24h)
         if (showWaves)
           Positioned(
-            bottom: 30,
+            bottom: 110,
             left: 16,
             right: 16,
             child: Center(
@@ -1104,41 +1241,31 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // Map Control Floating Buttons Column (Top Right)
+        // RED EXTENDED FAB AT BOTTOM RIGHT: "Add pin"
         Positioned(
-          top: 16,
+          bottom: 110,
           right: 16,
-          child: Column(
-            children: [
-              FloatingTopBarButton(
-                icon: Icons.layers_outlined,
-                tooltip: 'Map Layers',
-                badge: activeCount > 0
-                    ? Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF00E5FF),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$activeCount',
-                          style: const TextStyle(
-                            color: Color(0xFF001018),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      )
-                    : null,
-                onPressed: _openLayersDialog,
+          child: FloatingActionButton.extended(
+            heroTag: 'add_pin_fab',
+            backgroundColor: const Color(0xFFD1142A),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+              side: const BorderSide(color: Colors.white, width: 3),
+            ),
+            elevation: 6,
+            onPressed: () {
+              context.push('/spots/add');
+            },
+            icon: const Icon(Icons.add_location_alt, size: 24, color: Colors.white),
+            label: const Text(
+              'Add pin',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
               ),
-              const SizedBox(height: 8),
-              FloatingTopBarButton(
-                icon: Icons.my_location,
-                tooltip: 'My Location',
-                onPressed: _isLocating ? null : _centerOnMyLocation,
-              ),
-            ],
+            ),
           ),
         ),
 
@@ -1727,8 +1854,12 @@ class _TidePredictionDialog extends ConsumerWidget {
 
 class _SpotsListView extends StatelessWidget {
   final List<Spot> spots;
+  final VoidCallback onToggleView;
 
-  const _SpotsListView({required this.spots});
+  const _SpotsListView({
+    required this.spots,
+    required this.onToggleView,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1774,106 +1905,150 @@ class _SpotsListView extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: spots.length,
-      itemBuilder: (context, index) {
-        final spot = spots[index];
-        final formattedDate = spot.createdAt != null
-            ? DateFormat.yMMMd().format(spot.createdAt!)
-            : 'Recent';
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 88, left: 16, right: 16, bottom: 120),
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: spots.length,
+            itemBuilder: (context, index) {
+              final spot = spots[index];
+              final formattedDate = spot.createdAt != null
+                  ? DateFormat.yMMMd().format(spot.createdAt!)
+                  : 'Recent';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12.0),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              context.push('/spots/${spot.id}');
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          spot.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w900,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        formattedDate,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white70,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: spot.userId.isNotEmpty
-                        ? () => context.push('/profile/user/${spot.userId}')
-                        : null,
-                    borderRadius: BorderRadius.circular(4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12.0),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    context.push('/spots/${spot.id}');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 16,
-                          color: OceanThemeExtension.defaultTokens.cyan,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'By ${spot.authorName}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: OceanThemeExtension.defaultTokens.cyan,
-                                fontWeight: FontWeight.w800,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                spot.name,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
+                            ),
+                            Text(
+                              formattedDate,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white70,
+                                  ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 4),
+                        InkWell(
+                          onTap: spot.userId.isNotEmpty
+                              ? () => context.push('/profile/user/${spot.userId}')
+                              : null,
+                          borderRadius: BorderRadius.circular(4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 16,
+                                color: OceanThemeExtension.defaultTokens.cyan,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'By ${spot.authorName}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: OceanThemeExtension.defaultTokens.cyan,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (spot.description.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            spot.description,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        if (spot.species.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 6.0,
+                            runSpacing: 4.0,
+                            children: spot.species.map((s) {
+                              return Chip(
+                                label: Text(
+                                  s,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  if (spot.description.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      spot.description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  if (spot.species.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 6.0,
-                      runSpacing: 4.0,
-                      children: spot.species.map((s) {
-                        return Chip(
-                          label: Text(
-                            s,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ],
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Floating Top Bar Overlay in List View
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: FloatingTopBar(
+            leading: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: OceanThemeExtension.defaultTokens.surface,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: OceanThemeExtension.defaultTokens.cyan,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  'Spots List',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
               ),
             ),
+            actions: [
+              FloatingTopBarButton(
+                icon: Icons.map_outlined,
+                tooltip: 'Back to Map View',
+                onPressed: onToggleView,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

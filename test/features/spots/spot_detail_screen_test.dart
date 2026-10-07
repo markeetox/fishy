@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,24 @@ import 'package:seabound/features/spots/spot_detail_screen.dart';
 import 'package:seabound/features/spots/spot_model.dart';
 import 'package:seabound/features/spots/spots_providers.dart';
 
+class TestTileProvider extends TileProvider {
+  static final Uint8List _transparentBytes = Uint8List.fromList(const <int>[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+    0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+    0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+  ]);
+
+  const TestTileProvider();
+
+  @override
+  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
+    return MemoryImage(_transparentBytes);
+  }
+}
+
 class MockUser {
   final String uid = 'test_user_id';
   final String? displayName = 'Test Captain';
@@ -17,6 +37,13 @@ class MockUser {
 void main() {
   testWidgets('SpotDetailScreen contains GradientBackground and Close button; tapping Close pops screen',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final testSpot = Spot(
       id: 'spot_1',
       userId: 'test_user_id',
@@ -38,7 +65,10 @@ void main() {
         ),
         GoRoute(
           path: '/spots/:id',
-          builder: (c, s) => const SpotDetailScreen(spotId: 'spot_1'),
+          builder: (c, s) => const SpotDetailScreen(
+            spotId: 'spot_1',
+            tileProvider: TestTileProvider(),
+          ),
         ),
       ],
     );

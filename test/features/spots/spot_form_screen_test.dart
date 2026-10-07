@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,24 @@ import 'package:seabound/core/gradient_background.dart';
 import 'package:seabound/features/auth/auth_providers.dart';
 import 'package:seabound/features/profile/badge_service.dart';
 import 'package:seabound/features/spots/spot_form_screen.dart';
+
+class TestTileProvider extends TileProvider {
+  static final Uint8List _transparentBytes = Uint8List.fromList(const <int>[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+    0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+    0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+  ]);
+
+  const TestTileProvider();
+
+  @override
+  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
+    return MemoryImage(_transparentBytes);
+  }
+}
 
 class MockUser {
   final String uid = 'test_user_id';
@@ -26,6 +46,13 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('SpotFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -35,7 +62,7 @@ void main() {
         ),
         GoRoute(
           path: '/add',
-          builder: (c, s) => const SpotFormScreen(),
+          builder: (c, s) => const SpotFormScreen(tileProvider: TestTileProvider()),
         ),
       ],
     );
@@ -73,6 +100,13 @@ void main() {
 
   testWidgets('SpotFormScreen shows discard dialog when Close is tapped and field has text',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -82,7 +116,7 @@ void main() {
         ),
         GoRoute(
           path: '/add',
-          builder: (c, s) => const SpotFormScreen(),
+          builder: (c, s) => const SpotFormScreen(tileProvider: TestTileProvider()),
         ),
       ],
     );
@@ -104,11 +138,11 @@ void main() {
 
     // Type text into Spot Name field
     await tester.enterText(find.widgetWithText(TextFormField, 'Spot Name *'), 'Secret Reef');
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // Tap Close button
     await tester.tap(find.byTooltip('Close'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
     // Verify dark-themed discard dialog appears
     expect(find.text('Discard this pin?'), findsOneWidget);

@@ -17,6 +17,13 @@ class MockUser {
 void main() {
   testWidgets('TripDetailScreen contains GradientBackground and Close button; tapping Close pops screen',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final testTrip = Trip(
       id: 'trip_1',
       userId: 'test_user_id',

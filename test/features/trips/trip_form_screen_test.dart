@@ -26,6 +26,13 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('TripFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -72,6 +79,13 @@ void main() {
 
   testWidgets('TripFormScreen shows discard dialog when Close is tapped and field has text',
       (WidgetTester tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 3.0;
+
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -102,11 +116,11 @@ void main() {
 
     // Type text into Trip Title field
     await tester.enterText(find.widgetWithText(TextFormField, 'Trip Title *'), 'My Awesome Fishing Trip');
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // Tap Close button
     await tester.tap(find.byTooltip('Close'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
     // Verify dark-themed discard dialog appears
     expect(find.text('Discard this trip?'), findsOneWidget);

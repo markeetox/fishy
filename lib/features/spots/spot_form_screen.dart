@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/app_scaffold.dart';
 import '../../core/floating_top_bar.dart';
+import '../../core/map_layer_config.dart';
 import '../auth/auth_providers.dart';
 import '../map/location_providers.dart';
 import '../profile/badge_service.dart';
@@ -14,8 +15,9 @@ import 'spots_providers.dart';
 
 class SpotFormScreen extends ConsumerStatefulWidget {
   final String? spotId;
+  final TileProvider? tileProvider;
 
-  const SpotFormScreen({super.key, this.spotId});
+  const SpotFormScreen({super.key, this.spotId, this.tileProvider});
 
   bool get isEditing => spotId != null;
 
@@ -520,9 +522,9 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              urlTemplate: MapLayerConfig.openStreetMapTileUrl,
                               userAgentPackageName: 'com.onerevamp.seabound',
+                              tileProvider: widget.tileProvider,
                             ),
                             if (_pinnedLocation != null)
                               MarkerLayer(

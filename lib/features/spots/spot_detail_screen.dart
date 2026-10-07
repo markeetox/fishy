@@ -8,13 +8,19 @@ import 'package:latlong2/latlong.dart';
 import '../../core/app_scaffold.dart';
 import '../../core/app_theme.dart';
 import '../../core/floating_top_bar.dart';
+import '../../core/map_layer_config.dart';
 import '../auth/auth_providers.dart';
 import 'spots_providers.dart';
 
 class SpotDetailScreen extends ConsumerWidget {
   final String spotId;
+  final TileProvider? tileProvider;
 
-  const SpotDetailScreen({super.key, required this.spotId});
+  const SpotDetailScreen({
+    super.key,
+    required this.spotId,
+    this.tileProvider,
+  });
 
   Future<void> _confirmDelete(
       BuildContext context, WidgetRef ref, String spotName) async {
@@ -192,9 +198,9 @@ class SpotDetailScreen extends ConsumerWidget {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              urlTemplate: MapLayerConfig.openStreetMapTileUrl,
                               userAgentPackageName: 'com.onerevamp.seabound',
+                              tileProvider: tileProvider,
                             ),
                             MarkerLayer(
                               markers: [

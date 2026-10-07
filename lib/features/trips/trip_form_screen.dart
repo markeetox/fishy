@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/app_scaffold.dart';
-import '../../core/app_theme.dart';
 import '../../core/floating_top_bar.dart';
 import '../auth/auth_providers.dart';
 import '../profile/badge_service.dart';
@@ -114,7 +113,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               ),
               child: const Text(
                 'Discard',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -127,7 +126,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   Future<void> _handleClose(BuildContext context) async {
     if (_isDirty) {
       final shouldDiscard = await _showDiscardDialog(context);
-      if (shouldDiscard && mounted) {
+      if (!mounted || !context.mounted) return;
+      if (shouldDiscard) {
         context.pop();
       }
     } else {
@@ -310,7 +310,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldDiscard = await _showDiscardDialog(context);
-        if (shouldDiscard && mounted) {
+        if (!mounted || !context.mounted) return;
+        if (shouldDiscard) {
           Navigator.of(context).pop();
         }
       },

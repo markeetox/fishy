@@ -7,7 +7,6 @@ import 'package:seabound/core/gradient_background.dart';
 import 'package:seabound/features/auth/auth_providers.dart';
 import 'package:seabound/features/profile/badge_service.dart';
 import 'package:seabound/features/trips/trip_form_screen.dart';
-import 'package:seabound/features/trips/trips_providers.dart';
 
 class MockUser {
   final String uid = 'test_user_id';
@@ -27,8 +26,6 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('TripFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
-    bool didPop = false;
-
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -42,12 +39,6 @@ void main() {
         ),
       ],
     );
-
-    router.delegate.addListener(() {
-      if (router.state.matchedLocation == '/') {
-        didPop = true;
-      }
-    });
 
     await tester.pumpWidget(
       ProviderScope(
@@ -76,7 +67,7 @@ void main() {
 
     // Verify no discard dialog was shown and screen popped to '/'
     expect(find.text('Discard this trip?'), findsNothing);
-    expect(didPop, isTrue);
+    expect(find.text('Home'), findsOneWidget);
   });
 
   testWidgets('TripFormScreen shows discard dialog when Close is tapped and field has text',

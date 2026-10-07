@@ -26,8 +26,6 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('SpotFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
-    bool didPop = false;
-
     final router = GoRouter(
       initialLocation: '/add',
       routes: [
@@ -41,12 +39,6 @@ void main() {
         ),
       ],
     );
-
-    router.delegate.addListener(() {
-      if (router.state.matchedLocation == '/') {
-        didPop = true;
-      }
-    });
 
     await tester.pumpWidget(
       ProviderScope(
@@ -76,7 +68,7 @@ void main() {
 
     // Verify no discard dialog was shown and screen popped to '/'
     expect(find.text('Discard this pin?'), findsNothing);
-    expect(didPop, isTrue);
+    expect(find.text('Home'), findsOneWidget);
   });
 
   testWidgets('SpotFormScreen shows discard dialog when Close is tapped and field has text',

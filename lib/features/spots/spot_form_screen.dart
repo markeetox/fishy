@@ -123,7 +123,8 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
   Future<void> _handleClose(BuildContext context) async {
     if (_isDirty) {
       final shouldDiscard = await _showDiscardDialog(context);
-      if (shouldDiscard && mounted) {
+      if (!mounted || !context.mounted) return;
+      if (shouldDiscard) {
         context.pop();
       }
     } else {
@@ -346,7 +347,8 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldDiscard = await _showDiscardDialog(context);
-        if (shouldDiscard && mounted) {
+        if (!mounted || !context.mounted) return;
+        if (shouldDiscard) {
           Navigator.of(context).pop();
         }
       },

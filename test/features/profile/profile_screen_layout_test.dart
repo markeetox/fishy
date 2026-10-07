@@ -21,7 +21,7 @@ class MockProfileRepository implements ProfileRepository {
 class MockBadgeService implements BadgeService {
   @override
   Future<BadgeResult> checkAllBadges() async {
-    return const BadgeResult(newlyUnlocked: []);
+    return const BadgeResult();
   }
 
   @override

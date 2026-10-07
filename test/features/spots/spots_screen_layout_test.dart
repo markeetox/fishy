@@ -10,6 +10,7 @@ import 'package:seabound/features/spots/spots_screen.dart';
 
 class MockFailingReefsService implements ArtificialReefsService {
   bool shouldFail = true;
+  int fetchCount = 0;
 
   @override
   Future<List<ArtificialReefPoint>> fetchReefsInBounds({
@@ -18,6 +19,7 @@ class MockFailingReefsService implements ArtificialReefsService {
     required double minLng,
     required double maxLng,
   }) async {
+    fetchCount++;
     if (shouldFail) {
       throw Exception('Network connection failed');
     }
@@ -33,6 +35,14 @@ class MockFailingReefsService implements ArtificialReefsService {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockActiveMapLayersNotifier extends ActiveMapLayersNotifier {
+  final Set<String> initialLayers;
+  MockActiveMapLayersNotifier(this.initialLayers);
+
+  @override
+  Set<String> build() => initialLayers;
 }
 
 void main() {
@@ -70,7 +80,7 @@ void main() {
         overrides: [
           allSpotsStreamProvider.overrideWith((ref) => Stream.value([])),
           activeMapLayersProvider.overrideWith(
-            () => ActiveMapLayersNotifier()..state = {MapLayerConfig.artificialReefsId},
+            () => MockActiveMapLayersNotifier({MapLayerConfig.artificialReefsId}),
           ),
           artificialReefsServiceProvider.overrideWithValue(mockReefsService),
         ],
@@ -81,8 +91,13 @@ void main() {
       ),
     );
 
-    // Pump to trigger onMapReady and debounce timer (800ms)
-    await tester.pumpAndSettle(const Duration(milliseconds: 1000));
+    // Pump to render widget, trigger onMapReady and advance debounce timer (800ms)
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump();
+
+    // Verify artificial reefs fetch was called at least once
+    expect(mockReefsService.fetchCount, greaterThanOrEqualTo(1));
 
     // Verify error banner is shown
     expect(find.text("Couldn't load reef data"), findsOneWidget);
@@ -90,10 +105,15 @@ void main() {
 
     // Now make mock service succeed and tap Retry
     mockReefsService.shouldFail = false;
-    await tester.tap(find.text('Retry'));
+    final initialFetchCount = mockReefsService.fetchCount;
 
-    // Pump to trigger retry fetch and debounce timer
-    await tester.pumpAndSettle(const Duration(milliseconds: 1000));
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump();
+
+    // Verify another fetch request was triggered
+    expect(mockReefsService.fetchCount, greaterThan(initialFetchCount));
 
     // Verify error banner is cleared on success
     expect(find.text("Couldn't load reef data"), findsNothing);

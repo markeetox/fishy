@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/app_router.dart';
 import 'core/app_theme.dart';
+import 'core/gradient_background.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -32,6 +33,11 @@ class SeaboundApp extends ConsumerWidget {
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,
+      builder: (context, child) {
+        return GradientBackground.blue(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

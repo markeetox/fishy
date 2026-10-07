@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_scaffold.dart';
+import '../../core/app_theme.dart';
 import 'auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -81,10 +83,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login - Seabound'),
-      ),
+    final tokens = Theme.of(context).extension<OceanThemeExtension>() ??
+        OceanThemeExtension.defaultTokens;
+
+    return AppScaffold(
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -99,18 +101,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Icon(
                     Icons.sailing,
                     size: 80,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: tokens.cyan,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Welcome to Seabound',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'A community app for fishermen and boaters',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(
+                      color: tokens.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),

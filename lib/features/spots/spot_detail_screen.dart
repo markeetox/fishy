@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/app_scaffold.dart';
+import '../../core/app_theme.dart';
+import '../../core/floating_top_bar.dart';
 import '../auth/auth_providers.dart';
 import 'spots_providers.dart';
 
@@ -19,20 +22,40 @@ class SpotDetailScreen extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Delete Spot?'),
+          backgroundColor: const Color(0xFF0B2250),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+          ),
+          title: const Text(
+            'Delete Spot?',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           content: Text(
-              'Are you sure you want to delete "$spotName"? This action cannot be undone.'),
+            'Are you sure you want to delete "$spotName"? This action cannot be undone.',
+            style: const TextStyle(color: Colors.white70),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Color(0xFF00E5FF),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD1142A),
+                foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -54,67 +77,55 @@ class SpotDetailScreen extends ConsumerWidget {
     final currentUser = authState.asData?.value;
     final spotDetailAsync = ref.watch(spotDetailStreamProvider(spotId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Spot Details'),
-        actions: [
-          spotDetailAsync.when(
-            data: (spot) {
-              if (spot == null || currentUser == null || spot.userId != currentUser.uid) {
-                return const SizedBox.shrink();
-              }
-              return PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    context.push('/spots/$spotId/edit');
-                  } else if (value == 'delete') {
-                    _confirmDelete(context, ref, spot.name);
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ],
+    final tokens = Theme.of(context).extension<OceanThemeExtension>() ??
+        OceanThemeExtension.defaultTokens;
+
+    return spotDetailAsync.when(
+      data: (spot) {
+        if (spot == null) {
+          return AppScaffold(
+            topBar: FloatingTopBar(
+              leading: FloatingTopBarButton(
+                icon: Icons.close,
+                tooltip: 'Close',
+                onPressed: () => context.pop(),
+              ),
+            ),
+            body: const Center(child: Text('Spot not found.')),
+          );
+        }
+
+        final isAuthor = currentUser != null && currentUser.uid == spot.userId;
+        final formattedDate = spot.createdAt != null
+            ? DateFormat.yMMMMd().format(spot.createdAt!)
+            : 'Recent';
+
+        final spotLatLng = LatLng(spot.latitude, spot.longitude);
+
+        return AppScaffold(
+          topBar: FloatingTopBar(
+            leading: FloatingTopBarButton(
+              icon: Icons.close,
+              tooltip: 'Close',
+              onPressed: () => context.pop(),
+            ),
+            actions: isAuthor
+                ? [
+                    FloatingTopBarButton(
+                      icon: Icons.edit_outlined,
+                      tooltip: 'Edit',
+                      onPressed: () => context.push('/spots/$spotId/edit'),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red)),
-                      ],
+                    FloatingTopBarButton(
+                      icon: Icons.delete_outline,
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete(context, ref, spot.name),
                     ),
-                  ),
-                ],
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (error, stackTrace) => const SizedBox.shrink(),
+                  ]
+                : [],
           ),
-        ],
-      ),
-      body: spotDetailAsync.when(
-        data: (spot) {
-          if (spot == null) {
-            return const Center(child: Text('Spot not found.'));
-          }
-
-          final isAuthor = currentUser != null && currentUser.uid == spot.userId;
-          final formattedDate = spot.createdAt != null
-              ? DateFormat.yMMMMd().format(spot.createdAt!)
-              : 'Recent';
-
-          final spotLatLng = LatLng(spot.latitude, spot.longitude);
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 40),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
@@ -123,9 +134,11 @@ class SpotDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       spot.name,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -133,7 +146,7 @@ class SpotDetailScreen extends ConsumerWidget {
                         Icon(
                           Icons.person_outline,
                           size: 18,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: tokens.textSecondary,
                         ),
                         const SizedBox(width: 6),
                         InkWell(
@@ -143,24 +156,27 @@ class SpotDetailScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(4),
                           child: Text(
                             'Shared by ${spot.authorName}',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textSecondary,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Icon(
                           Icons.calendar_today_outlined,
                           size: 16,
-                          color: Theme.of(context).colorScheme.outline,
+                          color: tokens.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           formattedDate,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -186,10 +202,10 @@ class SpotDetailScreen extends ConsumerWidget {
                                   point: spotLatLng,
                                   width: 40,
                                   height: 40,
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.place,
                                     size: 40,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Color(0xFF00E5FF),
                                   ),
                                 ),
                               ],
@@ -208,85 +224,86 @@ class SpotDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     if (spot.description.isNotEmpty) ...[
-                      Text(
+                      const Text(
                         'Description',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withValues(alpha: 0.3),
+                          color: const Color(0xFF0B2250),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF00E5FF),
+                            width: 2,
+                          ),
                         ),
                         child: Text(
                           spot.description,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
                     ],
                     if (spot.species.isNotEmpty) ...[
-                      Text(
+                      const Text(
                         'Species Found Here',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8.0,
                         runSpacing: 8.0,
                         children: spot.species.map((species) {
-                          return Chip(label: Text(species));
+                          return Chip(
+                            label: Text(
+                              species,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          );
                         }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    if (isAuthor) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                context.push('/spots/$spotId/edit');
-                              },
-                              icon: const Icon(Icons.edit),
-                              label: const Text('Edit Spot'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(context).colorScheme.error,
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                              onPressed: () =>
-                                  _confirmDelete(context, ref, spot.name),
-                              icon: const Icon(Icons.delete),
-                              label: const Text('Delete Spot'),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ],
                 ),
               ),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error loading spot: $e')),
+          ),
+        );
+      },
+      loading: () => AppScaffold(
+        topBar: FloatingTopBar(
+          leading: FloatingTopBarButton(
+            icon: Icons.close,
+            tooltip: 'Close',
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, st) => AppScaffold(
+        topBar: FloatingTopBar(
+          leading: FloatingTopBarButton(
+            icon: Icons.close,
+            tooltip: 'Close',
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(child: Text('Error loading spot: $e')),
       ),
     );
   }

@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:seabound/core/app_theme.dart';
+import 'package:seabound/core/gradient_background.dart';
+import 'package:seabound/features/auth/auth_providers.dart';
+import 'package:seabound/features/profile/badge_service.dart';
+import 'package:seabound/features/trips/trip_form_screen.dart';
+import 'package:seabound/features/trips/trips_providers.dart';
+
+class MockUser {
+  final String uid = 'test_user_id';
+  final String? displayName = 'Test Captain';
+}
+
+class MockBadgeService implements BadgeService {
+  @override
+  Future<BadgeResult> onTripLogged(String uid, int tripCount) async {
+    return const BadgeResult();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void main() {
+  testWidgets('TripFormScreen contains GradientBackground and Close button; pops without dialog when empty',
+      (WidgetTester tester) async {
+    bool didPop = false;
+
+    final router = GoRouter(
+      initialLocation: '/add',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (c, s) => const Scaffold(body: Text('Home')),
+        ),
+        GoRoute(
+          path: '/add',
+          builder: (c, s) => const TripFormScreen(),
+        ),
+      ],
+    );
+
+    router.delegate.addListener(() {
+      if (router.state.matchedLocation == '/') {
+        didPop = true;
+      }
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith((ref) => Stream.value(MockUser() as dynamic)),
+          badgeServiceProvider.overrideWithValue(MockBadgeService()),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.darkTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify GradientBackground exists
+    expect(find.byType(GradientBackground), findsWidgets);
+
+    // Verify Close button exists
+    final closeButtonFinder = find.byTooltip('Close');
+    expect(closeButtonFinder, findsOneWidget);
+
+    // Tap Close button when form is empty
+    await tester.tap(closeButtonFinder);
+    await tester.pumpAndSettle();
+
+    // Verify no discard dialog was shown and screen popped to '/'
+    expect(find.text('Discard this trip?'), findsNothing);
+    expect(didPop, isTrue);
+  });
+
+  testWidgets('TripFormScreen shows discard dialog when Close is tapped and field has text',
+      (WidgetTester tester) async {
+    final router = GoRouter(
+      initialLocation: '/add',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (c, s) => const Scaffold(body: Text('Home')),
+        ),
+        GoRoute(
+          path: '/add',
+          builder: (c, s) => const TripFormScreen(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith((ref) => Stream.value(MockUser() as dynamic)),
+          badgeServiceProvider.overrideWithValue(MockBadgeService()),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.darkTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Type text into Trip Title field
+    await tester.enterText(find.widgetWithText(TextFormField, 'Trip Title *'), 'My Awesome Fishing Trip');
+    await tester.pumpAndSettle();
+
+    // Tap Close button
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
+    // Verify dark-themed discard dialog appears
+    expect(find.text('Discard this trip?'), findsOneWidget);
+    expect(find.text('Keep editing'), findsOneWidget);
+    expect(find.text('Discard'), findsOneWidget);
+
+    // Tap Discard button
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+
+    // Verify navigated back to '/'
+    expect(find.text('Home'), findsOneWidget);
+  });
+}

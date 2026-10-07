@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_scaffold.dart';
+import '../../core/app_theme.dart';
 import 'auth_providers.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -80,10 +82,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up - Seabound'),
-      ),
+    final tokens = Theme.of(context).extension<OceanThemeExtension>() ??
+        OceanThemeExtension.defaultTokens;
+
+    return AppScaffold(
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -98,12 +100,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   Icon(
                     Icons.anchor,
                     size: 80,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: tokens.cyan,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Join Seabound Community',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),

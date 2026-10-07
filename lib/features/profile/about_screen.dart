@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/app_scaffold.dart';
+import '../../core/floating_top_bar.dart';
 import '../../core/navigation_disclaimer.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -7,18 +10,31 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('About & Data Sources'),
+    return AppScaffold(
+      topBar: FloatingTopBar(
+        leading: FloatingTopBarButton(
+          icon: Icons.close,
+          tooltip: 'Close',
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 40),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text(
+                  'About & Data Sources',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   'Data Sources',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(

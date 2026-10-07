@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/app_scaffold.dart';
+import '../../core/floating_top_bar.dart';
 import '../auth/auth_providers.dart';
 import '../map/location_providers.dart';
 import '../profile/badge_service.dart';
@@ -29,6 +31,7 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
   final MapController _mapController = MapController();
 
   LatLng? _pinnedLocation;
+  LatLng? _initialPinnedLocation;
   final List<String> _speciesList = [];
 
   bool _isSaving = false;
@@ -37,11 +40,95 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onFieldChanged);
+    _descriptionController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
     _speciesTextController.dispose();
     super.dispose();
+  }
+
+  bool get _isDirty {
+    if (_nameController.text.trim().isNotEmpty) return true;
+    if (_descriptionController.text.trim().isNotEmpty) return true;
+    if (_speciesList.isNotEmpty) return true;
+    if (_pinnedLocation != null && _pinnedLocation != _initialPinnedLocation) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> _showDiscardDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0B2250),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+          ),
+          title: const Text(
+            'Discard this pin?',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: const Text(
+            'You have unsaved changes. Are you sure you want to discard them?',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(
+                'Keep editing',
+                style: TextStyle(
+                  color: Color(0xFF00E5FF),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD1142A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                'Discard',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<void> _handleClose(BuildContext context) async {
+    if (_isDirty) {
+      final shouldDiscard = await _showDiscardDialog(context);
+      if (shouldDiscard && mounted) {
+        context.pop();
+      }
+    } else {
+      context.pop();
+    }
   }
 
   void _addSpecies() {
@@ -65,6 +152,7 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
     _nameController.text = spot.name;
     _descriptionController.text = spot.description;
     _pinnedLocation = LatLng(spot.latitude, spot.longitude);
+    _initialPinnedLocation = _pinnedLocation;
     _speciesList.clear();
     _speciesList.addAll(spot.species);
     _isLoaded = true;
@@ -188,8 +276,14 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
     final user = authState.asData?.value;
 
     if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Spot')),
+      return AppScaffold(
+        topBar: FloatingTopBar(
+          leading: FloatingTopBarButton(
+            icon: Icons.close,
+            tooltip: 'Close',
+            onPressed: () => context.pop(),
+          ),
+        ),
         body: const Center(child: Text('User not authenticated.')),
       );
     }
@@ -202,20 +296,38 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
       return spotDetailAsync.when(
         data: (spot) {
           if (spot == null) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('Edit Spot')),
+            return AppScaffold(
+              topBar: FloatingTopBar(
+                leading: FloatingTopBarButton(
+                  icon: Icons.close,
+                  tooltip: 'Close',
+                  onPressed: () => context.pop(),
+                ),
+              ),
               body: const Center(child: Text('Spot not found.')),
             );
           }
           _populateSpotData(spot);
           return _buildFormScaffold(context, user.uid, displayName);
         },
-        loading: () => Scaffold(
-          appBar: AppBar(title: const Text('Edit Spot')),
+        loading: () => AppScaffold(
+          topBar: FloatingTopBar(
+            leading: FloatingTopBarButton(
+              icon: Icons.close,
+              tooltip: 'Close',
+              onPressed: () => context.pop(),
+            ),
+          ),
           body: const Center(child: CircularProgressIndicator()),
         ),
-        error: (e, st) => Scaffold(
-          appBar: AppBar(title: const Text('Edit Spot')),
+        error: (e, st) => AppScaffold(
+          topBar: FloatingTopBar(
+            leading: FloatingTopBarButton(
+              icon: Icons.close,
+              tooltip: 'Close',
+              onPressed: () => context.pop(),
+            ),
+          ),
           body: Center(child: Text('Error loading spot: $e')),
         ),
       );
@@ -227,202 +339,238 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
   Widget _buildFormScaffold(
       BuildContext context, String userId, String? userDisplayName) {
     final initialMapCenter = _pinnedLocation ?? const LatLng(25.7617, -80.1918);
+    final titleText = widget.isEditing ? 'Edit pin' : 'Add a pin';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Spot' : 'Add New Spot'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_errorMessage != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldDiscard = await _showDiscardDialog(context);
+        if (shouldDiscard && mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: AppScaffold(
+        topBar: FloatingTopBar(
+          leading: FloatingTopBarButton(
+            icon: Icons.close,
+            tooltip: 'Close',
+            onPressed: () => _handleClose(context),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 88, left: 24, right: 24, bottom: 40),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      titleText,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(height: 20),
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                    ],
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Spot Name *',
+                        hintText: 'e.g., Pelican Point, Secret Reef',
+                        border: OutlineInputBorder(),
+                      ),
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a spot name.';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Spot Name *',
-                      hintText: 'e.g., Pelican Point, Secret Reef',
-                      border: OutlineInputBorder(),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        hintText: 'Depth, tide preference, structure, or tips',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
                     ),
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a spot name.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      hintText: 'Depth, tide preference, structure, or tips',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Species Found Here',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _speciesTextController,
-                          decoration: const InputDecoration(
-                            hintText: 'Add a species (e.g., Tarpon, Snook)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          onSubmitted: (_) => _addSpecies(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        onPressed: _addSpecies,
-                        icon: const Icon(Icons.add),
-                        tooltip: 'Add species',
-                      ),
-                    ],
-                  ),
-                  if (_speciesList.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: _speciesList.map((species) {
-                        return Chip(
-                          label: Text(species),
-                          onDeleted: () => _removeSpecies(species),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Location Pin *',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _isLocating ? null : _useCurrentLocation,
-                        icon: _isLocating
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location, size: 16),
-                        label: const Text('Use my current location'),
-                        style: OutlinedButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_pinnedLocation != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 16),
                     Text(
-                      'Pinned: ${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                      'Species Found Here',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                     ),
-                  ],
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 280,
-                      child: FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: initialMapCenter,
-                          initialZoom: _pinnedLocation != null ? 12.0 : 9.0,
-                          onTap: (tapPosition, point) {
-                            setState(() {
-                              _pinnedLocation = point;
-                              _errorMessage = null;
-                            });
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.onerevamp.seabound',
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _speciesTextController,
+                            decoration: const InputDecoration(
+                              hintText: 'Add a species (e.g., Tarpon, Snook)',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onSubmitted: (_) => _addSpecies(),
                           ),
-                          if (_pinnedLocation != null)
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: _pinnedLocation!,
-                                  width: 40,
-                                  height: 40,
-                                  child: Icon(
-                                    Icons.location_on,
-                                    size: 40,
-                                    color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filled(
+                          onPressed: _addSpecies,
+                          icon: const Icon(Icons.add),
+                          tooltip: 'Add species',
+                        ),
+                      ],
+                    ),
+                    if (_speciesList.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: _speciesList.map((species) {
+                          return Chip(
+                            label: Text(species),
+                            onDeleted: () => _removeSpecies(species),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Location Pin *',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _isLocating ? null : _useCurrentLocation,
+                          icon: _isLocating
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.my_location, size: 16),
+                          label: const Text('Use my current location'),
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_pinnedLocation != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pinned: ${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}',
+                        style: const TextStyle(
+                          color: Color(0xFF00E5FF),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        height: 280,
+                        child: FlutterMap(
+                          mapController: _mapController,
+                          options: MapOptions(
+                            initialCenter: initialMapCenter,
+                            initialZoom: _pinnedLocation != null ? 12.0 : 9.0,
+                            onTap: (tapPosition, point) {
+                              setState(() {
+                                _pinnedLocation = point;
+                                _errorMessage = null;
+                              });
+                            },
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.onerevamp.seabound',
+                            ),
+                            if (_pinnedLocation != null)
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: _pinnedLocation!,
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(
+                                      Icons.location_on,
+                                      size: 40,
+                                      color: Theme.of(context).colorScheme.error,
+                                    ),
                                   ),
+                                ],
+                              ),
+                            RichAttributionWidget(
+                              attributions: [
+                                TextSourceAttribution(
+                                  'OpenStreetMap contributors',
+                                  onTap: () {},
                                 ),
                               ],
                             ),
-                          RichAttributionWidget(
-                            attributions: [
-                              TextSourceAttribution(
-                                'OpenStreetMap contributors',
-                                onTap: () {},
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () => _saveSpot(userId, userDisplayName),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () => _saveSpot(userId, userDisplayName),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(widget.isEditing ? 'Save pin' : 'Save pin'),
                     ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.isEditing ? 'Save Changes' : 'Add Spot'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

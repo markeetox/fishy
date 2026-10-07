@@ -70,7 +70,7 @@ void main() {
         overrides: [
           allSpotsStreamProvider.overrideWith((ref) => Stream.value([])),
           activeMapLayersProvider.overrideWith(
-            (ref) => ActiveMapLayersNotifier()..state = {MapLayerConfig.artificialReefsId},
+            () => ActiveMapLayersNotifier()..state = {MapLayerConfig.artificialReefsId},
           ),
           artificialReefsServiceProvider.overrideWithValue(mockReefsService),
         ],

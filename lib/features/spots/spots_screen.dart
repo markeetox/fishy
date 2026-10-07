@@ -218,6 +218,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         if (mounted) {
           setState(() {
             _reefsData = points;
+            _reefsError = null;
           });
         }
       } catch (e) {
@@ -864,6 +865,68 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ),
         ),
 
+        // Artificial Reefs Layer Error Banner Overlay
+        if (showArtificialReefs && _reefsError != null)
+          Positioned(
+            top: mostSevereAlert != null ? 190 : 140,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Couldn't load reef data",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final bounds = _currentBounds ?? _mapController.camera.visibleBounds;
+                      _fetchReefsForBounds(bounds);
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         // Slim Weather Alert Banner Overlay at top of map
         if (mostSevereAlert != null)
           Positioned(
@@ -915,7 +978,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
         // Unified Collapsible Legend Panel for active layers
         if (hasAnyLegend)
           Positioned(
-            top: mostSevereAlert != null ? 186 : 140,
+            top: (mostSevereAlert != null ? 186 : 140) +
+                (showArtificialReefs && _reefsError != null ? 50 : 0),
             left: 16,
             child: GestureDetector(
               onTap: () {

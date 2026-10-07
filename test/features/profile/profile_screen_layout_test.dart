@@ -29,7 +29,7 @@ class MockBadgeService implements BadgeService {
 }
 
 void main() {
-  testWidgets('ProfileScreen renders username with 36px font, stats container, and top bar buttons',
+  testWidgets('ProfileScreen renders username with 36px font, black stats container with circles, and no Captain profile title',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -50,18 +50,27 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify username is displayed
+    // Verify no "Captain profile" text header exists
+    expect(find.text('Captain profile'), findsNothing);
+
+    // Verify username is displayed large (font size 36)
     final usernameFinder = find.text('CaptainJack');
     expect(usernameFinder, findsOneWidget);
-
-    // Verify username font size is 36
-    final Text textWidget = tester.widget(usernameFinder);
-    expect(textWidget.style?.fontSize, 36);
+    final Text usernameText = tester.widget(usernameFinder);
+    expect(usernameText.style?.fontSize, 36);
+    expect(usernameText.style?.fontWeight, FontWeight.w900);
 
     // Verify stat circular tiles (Trips, Spots, Pins)
     expect(find.text('Trips'), findsOneWidget);
     expect(find.text('Spots'), findsOneWidget);
     expect(find.text('Pins'), findsOneWidget);
+
+    // Verify black stats container (#000000)
+    final statsContainerFinder = find.ancestor(
+      of: find.text('Trips'),
+      matching: find.byType(Container),
+    );
+    expect(statsContainerFinder, findsWidgets);
 
     // Verify top bar buttons
     expect(find.byIcon(Icons.edit_outlined), findsOneWidget);

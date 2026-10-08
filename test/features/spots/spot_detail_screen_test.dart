@@ -39,7 +39,7 @@ void main() {
     );
 
     final router = GoRouter(
-      initialLocation: '/spots/spot_1',
+      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
@@ -67,6 +67,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    // Push /spots/spot_1 on top of /
+    router.push('/spots/spot_1');
     await tester.pumpAndSettle();
 
     // Verify GradientBackground exists

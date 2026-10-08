@@ -36,7 +36,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
 
     final router = GoRouter(
-      initialLocation: '/add',
+      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
@@ -62,6 +62,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    // Push /add on top of /
+    router.push('/add');
     await tester.pumpAndSettle();
 
     // Verify GradientBackground exists
@@ -90,7 +94,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
 
     final router = GoRouter(
-      initialLocation: '/add',
+      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
@@ -116,6 +120,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    // Push /add on top of /
+    router.push('/add');
     await tester.pumpAndSettle();
 
     // Type text into Spot Name field

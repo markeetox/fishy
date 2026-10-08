@@ -56,19 +56,33 @@ class WindService {
 
   WindService({http.Client? client}) : _client = client ?? http.Client();
 
+  static void clearCache() {
+    _ndbcCache = null;
+  }
+
   Future<List<NdbcStationObs>> fetchNdbcStations() async {
     if (_ndbcCache != null && _ndbcCache!.isValid) {
       return _ndbcCache!.stations;
     }
 
-    final response = await _client.get(
-      Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
+    http.Response response;
+    try {
+      response = await _client.get(
+        Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
       );
+      if (response.statusCode != 200) {
+        throw Exception('Status ${response.statusCode}');
+      }
+    } catch (_) {
+      // Fallback for CORS block on web browsers
+      final proxyUrl =
+          'https://api.allorigins.win/raw?url=${Uri.encodeComponent(MapLayerConfig.noaaNdbcLatestObsUrl)}';
+      response = await _client.get(Uri.parse(proxyUrl));
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
+        );
+      }
     }
 
     final lines = const LineSplitter().convert(response.body);

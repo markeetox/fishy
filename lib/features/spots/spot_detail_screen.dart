@@ -149,7 +149,7 @@ class SpotDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Wrap(
-                      cross: WrapCrossAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 12,
                       runSpacing: 8,
                       children: [

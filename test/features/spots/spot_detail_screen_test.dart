@@ -27,7 +27,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
 
     final longTitle = 'A' * 80;
-    final longAuthor = 'Captain ' + ('B' * 40);
+    final longAuthor = 'Captain ${'B' * 40}';
 
     final testSpot = Spot(
       id: 'spot_1',

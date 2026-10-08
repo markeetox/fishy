@@ -25,7 +25,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
 
     final longTitle = 'A' * 80;
-    final longLocation = 'Cape Marina Dock B ' + ('C' * 50);
+    final longLocation = 'Cape Marina Dock B ${'C' * 50}';
 
     final testTrip = Trip(
       id: 'trip_1',

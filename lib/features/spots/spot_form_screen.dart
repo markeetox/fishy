@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/gradient_background.dart';
 import '../auth/auth_providers.dart';
 import '../map/location_providers.dart';
 import '../profile/badge_service.dart';
@@ -228,11 +229,13 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
       BuildContext context, String userId, String? userDisplayName) {
     final initialMapCenter = _pinnedLocation ?? const LatLng(25.7617, -80.1918);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Spot' : 'Add New Spot'),
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.isEditing ? 'Edit Spot' : 'Add New Spot'),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: ConstrainedBox(
@@ -428,6 +431,7 @@ class _SpotFormScreenState extends ConsumerState<SpotFormScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

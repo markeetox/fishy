@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/gradient_background.dart';
 import 'trips_providers.dart';
 
 class TripDetailScreen extends ConsumerWidget {
@@ -48,9 +49,11 @@ class TripDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tripDetailAsync = ref.watch(tripDetailStreamProvider(tripId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trip Details'),
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Trip Details'),
         actions: [
           tripDetailAsync.when(
             data: (trip) {
@@ -225,6 +228,7 @@ class TripDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Error loading trip: $e')),
       ),
+    ),
     );
   }
 }

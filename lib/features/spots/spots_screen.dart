@@ -1201,9 +1201,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // ICON-ONLY FAB AT BOTTOM RIGHT: "Add Opinion" (vertically aligned with Home button)
+        // ICON-ONLY FAB AT BOTTOM RIGHT: "Add Opinion" (vertically aligned with Home button at bottom: 26)
         Positioned(
-          bottom: 34,
+          bottom: 26,
           right: 16,
           child: SafeArea(
             child: Tooltip(

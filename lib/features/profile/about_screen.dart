@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/gradient_background.dart';
 import '../../core/navigation_disclaimer.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -7,11 +8,13 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('About & Data Sources'),
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('About & Data Sources'),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: ConstrainedBox(
@@ -138,6 +141,7 @@ class AboutScreen extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

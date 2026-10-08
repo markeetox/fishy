@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,9 +12,15 @@ import 'package:seabound/features/spots/spots_providers.dart';
 
 import '../../helpers/fake_tile_provider.dart';
 
-class MockUser {
-  final String uid = 'test_user_id';
-  final String? displayName = 'Test Captain';
+class MockFirebaseUser implements User {
+  @override
+  String get uid => 'test_user_id';
+
+  @override
+  String? get displayName => 'Test Captain';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -61,7 +68,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authStateProvider.overrideWith((ref) => Stream.value(MockUser() as dynamic)),
+          authStateProvider.overrideWith((ref) => Stream.value(MockFirebaseUser())),
           spotDetailStreamProvider('spot_1').overrideWith((ref) => Stream.value(testSpot)),
         ],
         child: MaterialApp.router(

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,9 +9,15 @@ import 'package:seabound/features/auth/auth_providers.dart';
 import 'package:seabound/features/profile/badge_service.dart';
 import 'package:seabound/features/trips/trip_form_screen.dart';
 
-class MockUser {
-  final String uid = 'test_user_id';
-  final String? displayName = 'Test Captain';
+class MockFirebaseUser implements User {
+  @override
+  String get uid => 'test_user_id';
+
+  @override
+  String? get displayName => 'Test Captain';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class MockBadgeService implements BadgeService {
@@ -50,7 +57,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authStateProvider.overrideWith((ref) => Stream.value(MockUser() as dynamic)),
+          authStateProvider.overrideWith((ref) => Stream.value(MockFirebaseUser())),
           badgeServiceProvider.overrideWithValue(MockBadgeService()),
         ],
         child: MaterialApp.router(
@@ -107,7 +114,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authStateProvider.overrideWith((ref) => Stream.value(MockUser() as dynamic)),
+          authStateProvider.overrideWith((ref) => Stream.value(MockFirebaseUser())),
           badgeServiceProvider.overrideWithValue(MockBadgeService()),
         ],
         child: MaterialApp.router(
@@ -122,8 +129,8 @@ void main() {
     router.push('/add');
     await tester.pumpAndSettle();
 
-    // Type text into Trip Title field
-    final titleField = find.byType(TextFormField).first;
+    // Type text into first TextField (Trip Title)
+    final titleField = find.byType(TextField).first;
     await tester.ensureVisible(titleField);
     await tester.enterText(titleField, 'My Awesome Fishing Trip');
     await tester.pump();
@@ -132,10 +139,21 @@ void main() {
     await tester.tap(find.byTooltip('Close'));
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Verify dark-themed discard dialog appears
+    // Verify dark-themed discard dialog appears with Keep editing and Discard buttons
     expect(find.text('Discard this trip?'), findsOneWidget);
     expect(find.text('Keep editing'), findsOneWidget);
     expect(find.text('Discard'), findsOneWidget);
+
+    // Test Keep editing leaves the form open
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log a trip'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
+
+    // Tap Close button again
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pump(const Duration(milliseconds: 400));
 
     // Tap Discard button
     await tester.tap(find.text('Discard'));

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/map_layer_config.dart';
@@ -66,22 +67,45 @@ class WindService {
     }
 
     http.Response response;
-    try {
-      response = await _client.get(
-        Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
-      );
-      if (response.statusCode != 200) {
-        throw Exception('Status ${response.statusCode}');
-      }
-    } catch (_) {
-      // Fallback for CORS block on web browsers
-      final proxyUrl =
-          'https://api.allorigins.win/raw?url=${Uri.encodeComponent(MapLayerConfig.noaaNdbcLatestObsUrl)}';
-      response = await _client.get(Uri.parse(proxyUrl));
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
+    final proxyUrl =
+        'https://api.allorigins.win/raw?url=${Uri.encodeComponent(MapLayerConfig.noaaNdbcLatestObsUrl)}';
+
+    if (kIsWeb) {
+      // On Flutter Web, browser CORS blocks direct requests to NOAA NDBC.
+      // Fetch via CORS proxy directly to prevent browser CORS console errors.
+      try {
+        response = await _client.get(Uri.parse(proxyUrl));
+        if (response.statusCode != 200) {
+          throw Exception('Proxy status ${response.statusCode}');
+        }
+      } catch (_) {
+        // Fallback to direct request if proxy fails
+        response = await _client.get(
+          Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
         );
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
+          );
+        }
+      }
+    } else {
+      // On native mobile (iOS / Android), fetch directly first.
+      try {
+        response = await _client.get(
+          Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
+        );
+        if (response.statusCode != 200) {
+          throw Exception('Direct status ${response.statusCode}');
+        }
+      } catch (_) {
+        // Fallback to CORS proxy if direct fetch fails on native
+        response = await _client.get(Uri.parse(proxyUrl));
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
+          );
+        }
       }
     }
 

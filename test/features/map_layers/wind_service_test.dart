@@ -33,7 +33,11 @@ LONF1    24.84   -80.60  2026 10 08 21 00  MM    MM    MM   MM  MM   MM  MM 1015
 ''';
 
       final mockClient = MockClient((request) async {
-        return http.Response(mockResponseBody, 200);
+        if (request.url.host == 'www.ndbc.noaa.gov' ||
+            request.url.host == 'api.allorigins.win') {
+          return http.Response(mockResponseBody, 200);
+        }
+        return http.Response('Not Found', 404);
       });
 
       final service = WindService(client: mockClient);

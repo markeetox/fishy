@@ -708,453 +708,463 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
-        // TOP CONTROLS OVERLAY - COMPACT SINGLE HORIZONTAL ROW
+        // TOP-RIGHT CONTROLS OVERLAY: Layers and Location Controls
         Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
+          top: 8,
+          right: 16,
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  // Layers Button
-                  Tooltip(
-                    message: 'Layers',
-                    child: InkWell(
-                      onTap: _openLayersDialog,
-                      borderRadius: BorderRadius.circular(26),
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: OceanThemeExtension.defaultTokens.surface,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: OceanThemeExtension.defaultTokens.cyan,
-                            width: 2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black45,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Layers Button
+                Tooltip(
+                  message: 'Layers',
+                  child: InkWell(
+                    onTap: _openLayersDialog,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: OceanThemeExtension.defaultTokens.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: OceanThemeExtension.defaultTokens.cyan,
+                          width: 2,
                         ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Icon(Icons.layers_outlined, size: 24, color: Colors.white),
-                            if (activeCount > 0)
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF00E5FF),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    '$activeCount',
-                                    style: const TextStyle(
-                                      color: Color(0xFF001018),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                    ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(Icons.layers_outlined, size: 22, color: Colors.white),
+                          if (activeCount > 0)
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF00E5FF),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '$activeCount',
+                                  style: const TextStyle(
+                                    color: Color(0xFF001018),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // My Location Button
-                  Tooltip(
-                    message: 'My Location',
-                    child: InkWell(
-                      onTap: _isLocating ? null : _centerOnMyLocation,
-                      borderRadius: BorderRadius.circular(26),
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: OceanThemeExtension.defaultTokens.surface,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: OceanThemeExtension.defaultTokens.cyan,
-                            width: 2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black45,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
                             ),
-                          ],
-                        ),
-                        child: Center(
-                          child: _isLocating
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.my_location, size: 24, color: Colors.white),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+
+                // My Location Button
+                Tooltip(
+                  message: 'My Location',
+                  child: InkWell(
+                    onTap: _isLocating ? null : _centerOnMyLocation,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: OceanThemeExtension.defaultTokens.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: OceanThemeExtension.defaultTokens.cyan,
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: _isLocating
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.my_location, size: 22, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
 
-        // Artificial Reefs Layer Error Banner Overlay
-        if (showArtificialReefs && _reefsError != null)
-          Positioned(
-            top: mostSevereAlert != null ? 190 : 140,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Couldn't load reef data",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      final bounds = _currentBounds ?? _mapController.camera.visibleBounds;
-                      _fetchReefsForBounds(bounds);
+        // TOP-LEFT STACK: Map Legend and Active Warning Banners
+        Positioned(
+          top: 8,
+          left: 16,
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Unified Collapsible Legend Panel
+                if (hasAnyLegend)
+                  GestureDetector(
+                    onTap: () {
+                      if (isPhoneScreen) {
+                        setState(() {
+                          _isLegendExpanded = !_isLegendExpanded;
+                        });
+                      }
                     },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'Retry',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Slim Weather Alert Banner Overlay at top of map
-        if (mostSevereAlert != null)
-          Positioned(
-            top: 140,
-            left: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: () {
-                context.go('/alerts');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: _alertSeverityColor(mostSevereAlert.severity),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${mostSevereAlert.event} (${mostSevereAlert.severity})',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right,
-                        color: Colors.white, size: 18),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-        // Unified Collapsible Legend Panel for active layers
-        if (hasAnyLegend)
-          Positioned(
-            top: (mostSevereAlert != null ? 186 : 140) +
-                (showArtificialReefs && _reefsError != null ? 50 : 0),
-            left: 16,
-            child: GestureDetector(
-              onTap: () {
-                if (isPhoneScreen) {
-                  setState(() {
-                    _isLegendExpanded = !_isLegendExpanded;
-                  });
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                constraints: const BoxConstraints(maxWidth: 250),
-                decoration: BoxDecoration(
-                  color: OceanThemeExtension.defaultTokens.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white24, width: 2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Map Legends',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (isPhoneScreen) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            _isLegendExpanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            color: Colors.white70,
-                            size: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      constraints: const BoxConstraints(maxWidth: 220),
+                      decoration: BoxDecoration(
+                        color: OceanThemeExtension.defaultTokens.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white24, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
                           ),
                         ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Map Legends',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (isPhoneScreen) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  _isLegendExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (shouldShowLegendContent) ...[
+                            const SizedBox(height: 8),
+
+                            // Artificial Reefs & Habitat Info
+                            if (showArtificialReefs || showReefHabitat) ...[
+                              Text(
+                                showArtificialReefs && showReefHabitat
+                                    ? 'Reefs & Habitat'
+                                    : showArtificialReefs
+                                        ? 'Artificial Reefs'
+                                        : 'Reef Habitat',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                MapLayerConfig.fwcStructureInfoText,
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 8,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+
+                            // Sea Temperature Legend
+                            if (showSst) ...[
+                              const Text(
+                                'Sea temperature',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              sstDateAsync.when(
+                                data: (d) => Text(
+                                  'Image date: ${GibsDateService.formatDisplayDate(d)}',
+                                  style: const TextStyle(
+                                      color: Colors.white54, fontSize: 8),
+                                ),
+                                loading: () => const SizedBox.shrink(),
+                                error: (e, st) => const SizedBox.shrink(),
+                              ),
+                              const SizedBox(height: 4),
+                              Image.network(
+                                MapLayerConfig.gibsSstLegendUrl,
+                                height: 16,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const SizedBox.shrink(),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
+                                style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 8,
+                                    fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+
+                            // Chlorophyll Legend
+                            if (showChlorophyll) ...[
+                              const Text(
+                                'Chlorophyll',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              chlorophyllDateAsync.when(
+                                data: (d) => Text(
+                                  'Image date: ${GibsDateService.formatDisplayDate(d)}',
+                                  style: const TextStyle(
+                                      color: Colors.white54, fontSize: 8),
+                                ),
+                                loading: () => const SizedBox.shrink(),
+                                error: (e, st) => const SizedBox.shrink(),
+                              ),
+                              const SizedBox(height: 4),
+                              Image.network(
+                                MapLayerConfig.gibsChlorophyllLegendUrl,
+                                height: 16,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const SizedBox.shrink(),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
+                                style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 8,
+                                    fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+
+                            // Depth Legend
+                            if (showDepth) ...[
+                              const Text(
+                                'Elevation / Depth',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: 110,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(2),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF000055),
+                                      Color(0xFF0066CC),
+                                      Color(0xFF66CCFF),
+                                      Color(0xFF009933),
+                                      Color(0xFF996633),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const SizedBox(
+                                width: 110,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Deep',
+                                        style: TextStyle(
+                                            color: Colors.white54, fontSize: 8)),
+                                    Text('High',
+                                        style: TextStyle(
+                                            color: Colors.white54, fontSize: 8)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+
+                            // Waves Legend
+                            if (showWaves) ...[
+                              const Text(
+                                'Wave Height (ft)',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  _LegendBox(
+                                      color: Colors.green.shade600, label: '<2'),
+                                  const SizedBox(width: 3),
+                                  _LegendBox(
+                                      color: Colors.amber.shade700, label: '2-4'),
+                                  const SizedBox(width: 3),
+                                  _LegendBox(
+                                      color: Colors.orange.shade800, label: '4-6'),
+                                  const SizedBox(width: 3),
+                                  _LegendBox(
+                                      color: Colors.red.shade700, label: '>6'),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Slim Weather Alert Banner directly under Legend
+                if (mostSevereAlert != null) ...[
+                  if (hasAnyLegend) const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () {
+                      context.go('/alerts');
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 220),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _alertSeverityColor(mostSevereAlert.severity),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Colors.white, size: 18),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${mostSevereAlert.event} (${mostSevereAlert.severity})',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right,
+                              color: Colors.white, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Artificial Reefs Error Banner directly under Legend/Alerts
+                if (showArtificialReefs && _reefsError != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
                       ],
                     ),
-                    if (shouldShowLegendContent) ...[
-                      const SizedBox(height: 8),
-
-                      // Artificial Reefs & Habitat Info
-                      if (showArtificialReefs || showReefHabitat) ...[
-                        Text(
-                          showArtificialReefs && showReefHabitat
-                              ? 'Reefs & Habitat'
-                              : showArtificialReefs
-                                  ? 'Artificial Reefs'
-                                  : 'Reef Habitat',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            "Couldn't load reef data",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onErrorContainer,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          MapLayerConfig.fwcStructureInfoText,
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 8,
-                            fontStyle: FontStyle.italic,
+                        TextButton(
+                          onPressed: () {
+                            final bounds = _currentBounds ?? _mapController.camera.visibleBounds;
+                            _fetchReefsForBounds(bounds);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Sea Temperature Legend
-                      if (showSst) ...[
-                        const Text(
-                          'Sea temperature',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        sstDateAsync.when(
-                          data: (d) => Text(
-                            'Image date: ${GibsDateService.formatDisplayDate(d)}',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 8),
-                          ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (e, st) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 4),
-                        Image.network(
-                          MapLayerConfig.gibsSstLegendUrl,
-                          height: 16,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
-                          style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 8,
-                              fontStyle: FontStyle.italic),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Chlorophyll Legend
-                      if (showChlorophyll) ...[
-                        const Text(
-                          'Chlorophyll',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        chlorophyllDateAsync.when(
-                          data: (d) => Text(
-                            'Image date: ${GibsDateService.formatDisplayDate(d)}',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 8),
-                          ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (e, st) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 4),
-                        Image.network(
-                          MapLayerConfig.gibsChlorophyllLegendUrl,
-                          height: 16,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Shows ocean conditions that often concentrate fish, such as temperature breaks and color changes. It does not show where fish are. Clouds can leave gaps.',
-                          style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 8,
-                              fontStyle: FontStyle.italic),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Depth Legend
-                      if (showDepth) ...[
-                        const Text(
-                          'Elevation / Depth',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 110,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(2),
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF000055),
-                                Color(0xFF0066CC),
-                                Color(0xFF66CCFF),
-                                Color(0xFF009933),
-                                Color(0xFF996633),
-                              ],
+                          child: Text(
+                            'Retry',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onErrorContainer,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        const SizedBox(
-                          width: 110,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Deep',
-                                  style: TextStyle(
-                                      color: Colors.white54, fontSize: 8)),
-                              Text('High',
-                                  style: TextStyle(
-                                      color: Colors.white54, fontSize: 8)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
                       ],
-
-                      // Waves Legend
-                      if (showWaves) ...[
-                        const Text(
-                          'Wave Height (ft)',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            _LegendBox(
-                                color: Colors.green.shade600, label: '<2'),
-                            const SizedBox(width: 3),
-                            _LegendBox(
-                                color: Colors.amber.shade700, label: '2-4'),
-                            const SizedBox(width: 3),
-                            _LegendBox(
-                                color: Colors.orange.shade800, label: '4-6'),
-                            const SizedBox(width: 3),
-                            _LegendBox(
-                                color: Colors.red.shade700, label: '>6'),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
+        ),
 
         // Waves Time Control Widget Bar (Now, +3h, +6h, +12h, +24h)
         if (showWaves)
@@ -1191,51 +1201,52 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // RED EXTENDED FAB AT BOTTOM RIGHT: "Add pin"
+        // ICON-ONLY FAB AT BOTTOM RIGHT: "Add Opinion" (vertically aligned with Home button)
         Positioned(
-          bottom: 110,
+          bottom: 34,
           right: 16,
-          child: FloatingActionButton.extended(
-            heroTag: 'add_pin_fab',
-            backgroundColor: const Color(0xFFD1142A),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-              side: const BorderSide(color: Colors.white, width: 3),
-            ),
-            elevation: 6,
-            onPressed: () {
-              context.push('/spots/add');
-            },
-            icon: const Icon(Icons.add_location_alt, size: 24, color: Colors.white),
-            label: const Text(
-              'Add pin',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
+          child: SafeArea(
+            child: Tooltip(
+              message: 'Add Opinion',
+              child: FloatingActionButton(
+                heroTag: 'add_pin_fab',
+                backgroundColor: const Color(0xFFD1142A),
+                foregroundColor: Colors.white,
+                shape: const CircleBorder(
+                  side: BorderSide(color: Colors.white, width: 3),
+                ),
+                elevation: 6,
+                onPressed: () {
+                  context.push('/spots/add');
+                },
+                child: const Icon(Icons.add_location_alt, size: 26, color: Colors.white),
               ),
             ),
           ),
         ),
 
-        // Low-contrast Disclaimer Banner along bottom edge
+        // Compact Unobtrusive Disclaimer Banner along bottom edge
         Positioned(
-          bottom: 0,
+          bottom: 2,
           left: 0,
           right: 0,
-          child: GestureDetector(
-            onTap: () => NavigationDisclaimer.showFullDisclaimerDialog(context),
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.6),
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: const Text(
-                'Not for navigation. Tap for details.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
+          child: Center(
+            child: GestureDetector(
+              onTap: () => NavigationDisclaimer.showFullDisclaimerDialog(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Not for navigation. Tap for details.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ),

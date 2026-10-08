@@ -46,7 +46,7 @@ void main() {
       expect(selectedIndex, equals(2));
     });
 
-    testWidgets('long press on Home button opens radial fan menu',
+    testWidgets('long press on Home button opens radial fan menu in an arch',
         (WidgetTester tester) async {
       await pumpApp(
         tester,
@@ -65,8 +65,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Fan menu should now be open, displaying destination labels
-      expect(find.text('Trips'), findsOneWidget);
       expect(find.text('Spots'), findsOneWidget);
+      expect(find.text('Trips'), findsOneWidget);
       expect(find.text('Alerts'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
 
@@ -75,7 +75,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('long press and drag to destination selects item on release',
+    testWidgets('long press and drag to destination along arc selects item on release',
         (WidgetTester tester) async {
       int? selectedIndex;
 
@@ -96,8 +96,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      // Drag upward toward Trips destination (dx=0, dy=-135)
-      await gesture.moveTo(Offset(homeCenter.dx, homeCenter.dy - 135));
+      // Drag along arc toward Trips destination (dx = -52.8, dy = -113.3)
+      await gesture.moveTo(Offset(homeCenter.dx - 52.8, homeCenter.dy - 113.3));
       await tester.pumpAndSettle();
 
       // Release gesture
@@ -140,7 +140,7 @@ void main() {
   });
 
   group('HomeShellScreen StatefulShellRoute Integration Tests', () {
-    testWidgets('a signed-in user starts on Home and can navigate using fan menu',
+    testWidgets('a signed-in user starts on Home and can navigate using arch fan menu',
         (WidgetTester tester) async {
       final router = GoRouter(
         initialLocation: '/home',
@@ -186,8 +186,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      // Drag to Spots (dx=-95, dy=-55)
-      await gesture.moveTo(Offset(homeCenter.dx - 95, homeCenter.dy - 55));
+      // Drag to Spots along arc (dx = -113.3, dy = -52.8)
+      await gesture.moveTo(Offset(homeCenter.dx - 113.3, homeCenter.dy - 52.8));
       await tester.pumpAndSettle();
 
       await gesture.up();

@@ -9,6 +9,7 @@ class MapLayerConfig {
   static const String chlorophyllId = 'chlorophyll';
   static const String artificialReefsId = 'artificial_reefs';
   static const String reefHabitatId = 'reef_habitat';
+  static const String windObsId = 'wind_obs';
 
   // URLs
   static const String openStreetMapTileUrl =
@@ -38,6 +39,9 @@ class MapLayerConfig {
 
   static const String noaaTideDataGetterUrl =
       'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter';
+
+  static const String noaaNdbcLatestObsUrl =
+      'https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt';
 
   // TODO: Open-Meteo is free for non-commercial use only. A paid API key / subscription plan is required if Seabound is commercialized or monetized.
   static const String openMeteoMarineUrl =

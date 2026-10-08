@@ -23,6 +23,8 @@ import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
 import '../map_layers/waves_provider.dart';
 import '../map_layers/waves_service.dart';
+import '../map_layers/wind_provider.dart';
+import '../map_layers/wind_service.dart';
 import '../profile/badge_service.dart';
 import 'spot_model.dart';
 import 'spots_providers.dart';
@@ -164,6 +166,16 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     );
   }
 
+  void _showWindDetailSheet(NdbcStationObs station) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => _NdbcDetailSheet(station: station),
+    );
+  }
+
   void _fetchWavesForBounds(LatLngBounds bounds) {
     _wavesDebounceTimer?.cancel();
     _wavesDebounceTimer = Timer(const Duration(milliseconds: 800), () async {
@@ -277,6 +289,19 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     }
   }
 
+  Color _getWindColor(double? knots) {
+    if (knots == null) return Colors.blueGrey;
+    if (knots < 10.0) {
+      return Colors.green.shade600;
+    } else if (knots < 15.0) {
+      return Colors.amber.shade700;
+    } else if (knots < 20.0) {
+      return Colors.orange.shade800;
+    } else {
+      return Colors.red.shade700;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeLayers = ref.watch(activeMapLayersProvider);
@@ -298,6 +323,9 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final showSoundings = activeLayers.contains(MapLayerConfig.depthNumbersId);
     final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
     final showFishSpots = activeLayers.contains('fish_spots');
+    final showWindObs = activeLayers.contains(MapLayerConfig.windObsId);
+
+    final ndbcStationsAsync = ref.watch(ndbcStationsProvider);
 
     final activeCount = activeLayers.length;
 
@@ -337,7 +365,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final isPhoneScreen = MediaQuery.of(context).size.width < 600;
     final shouldShowLegendContent = !isPhoneScreen || _isLegendExpanded;
 
-    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll || showArtificialReefs || showReefHabitat;
+    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll || showArtificialReefs || showReefHabitat || showWindObs;
 
     return Stack(
       children: [
@@ -503,6 +531,76 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     ),
                   );
                 }).toList(),
+              ),
+
+            // NOAA NDBC Wind & Buoy Station Markers Layer
+            if (showWindObs)
+              ndbcStationsAsync.when(
+                data: (stations) {
+                  final visibleStations = stations.where((s) {
+                    if (_currentBounds == null) return true;
+                    return _currentBounds!.contains(LatLng(s.latitude, s.longitude));
+                  }).toList();
+
+                  return MarkerLayer(
+                    markers: visibleStations.map((station) {
+                      final color = _getWindColor(station.windSpeedKnots);
+                      final dirRad = station.windDirectionDeg != null
+                          ? (station.windDirectionDeg! * (3.1415926535 / 180.0))
+                          : 0.0;
+                      final speedLabel = station.windSpeedKnots != null
+                          ? '${station.windSpeedKnots!.toStringAsFixed(0)}kt'
+                          : 'Buoy';
+
+                      return Marker(
+                        point: LatLng(station.latitude, station.longitude),
+                        width: 44.0,
+                        height: 44.0,
+                        child: GestureDetector(
+                          onTap: () => _showWindDetailSheet(station),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.5),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (station.windDirectionDeg != null)
+                                  Transform.rotate(
+                                    angle: dirRad,
+                                    child: const Icon(
+                                      Icons.arrow_upward,
+                                      size: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                Text(
+                                  speedLabel,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (error, stackTrace) => const SizedBox.shrink(),
               ),
 
             // Waves Grid Markers Layer
@@ -1048,6 +1146,35 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                                       color: Colors.red.shade700, label: '>6'),
                                 ],
                               ),
+                        const SizedBox(height: 8),
+                      ],
+
+                      // Wind Speed Legend
+                      if (showWindObs) ...[
+                        const Text(
+                          'Wind Speed (kts)',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            _LegendBox(
+                                color: Colors.green.shade600, label: '<10'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.amber.shade700, label: '10-15'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.orange.shade800, label: '15-20'),
+                            const SizedBox(width: 3),
+                            _LegendBox(
+                                color: Colors.red.shade700, label: '>20'),
+                          ],
+                        ),
                             ],
                           ],
                         ],
@@ -1654,6 +1781,138 @@ class _WaveDetailSheet extends StatelessWidget {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NdbcDetailSheet extends StatelessWidget {
+  final NdbcStationObs station;
+
+  const _NdbcDetailSheet({required this.station});
+
+  @override
+  Widget build(BuildContext context) {
+    final latStr = station.latitude.toStringAsFixed(4);
+    final lngStr = station.longitude.toStringAsFixed(4);
+    final coordStr = '$latStr, $lngStr';
+    final timeStr = DateFormat.yMMMd().add_jm().format(station.observationTime.toLocal());
+    final compassDir = NdbcStationObs.degreesToCompass(station.windDirectionDeg);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NOAA NDBC Station ${station.stationId}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      Text(
+                        'Observed: $timeStr',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _DetailMetric(
+                          label: 'Wind Speed',
+                          value: station.windSpeedKnots != null
+                              ? '${station.windSpeedKnots!.toStringAsFixed(1)} kts'
+                              : 'N/A',
+                          icon: Icons.air,
+                        ),
+                        _DetailMetric(
+                          label: 'Wind Direction',
+                          value: station.windDirectionDeg != null
+                              ? '$compassDir (${station.windDirectionDeg!.toStringAsFixed(0)}°)'
+                              : 'N/A',
+                          icon: Icons.explore,
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _DetailMetric(
+                          label: 'Wind Gusts',
+                          value: station.windGustKnots != null
+                              ? '${station.windGustKnots!.toStringAsFixed(1)} kts'
+                              : 'N/A',
+                          icon: Icons.air,
+                        ),
+                        _DetailMetric(
+                          label: 'Wave Height',
+                          value: station.waveHeightFt != null
+                              ? '${station.waveHeightFt!.toStringAsFixed(1)} ft'
+                              : 'N/A',
+                          icon: Icons.waves,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Location: $coordStr',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: coordStr));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Coordinates copied to clipboard!'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copy'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

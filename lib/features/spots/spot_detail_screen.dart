@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/gradient_background.dart';
 import '../auth/auth_providers.dart';
 import 'spots_providers.dart';
 
@@ -54,9 +55,11 @@ class SpotDetailScreen extends ConsumerWidget {
     final currentUser = authState.asData?.value;
     final spotDetailAsync = ref.watch(spotDetailStreamProvider(spotId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Spot Details'),
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Spot Details'),
         actions: [
           spotDetailAsync.when(
             data: (spot) {
@@ -288,6 +291,7 @@ class SpotDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Error loading spot: $e')),
       ),
+    ),
     );
   }
 }

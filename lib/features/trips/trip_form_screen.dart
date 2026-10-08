@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/gradient_background.dart';
 import '../auth/auth_providers.dart';
 import '../profile/badge_service.dart';
 import 'trip_model.dart';
@@ -185,11 +186,13 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   Widget _buildFormScaffold(BuildContext context, String userId) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Trip' : 'Log New Trip'),
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground.blue(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.isEditing ? 'Edit Trip' : 'Log New Trip'),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: ConstrainedBox(
@@ -343,6 +346,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

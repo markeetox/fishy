@@ -4,6 +4,10 @@ import 'package:http/testing.dart';
 import 'package:seabound/features/map_layers/wind_service.dart';
 
 void main() {
+  setUp(() {
+    WindService.clearCache();
+  });
+
   group('NdbcStationObs Model & Conversion Tests', () {
     test('mpsToKnots converts meters/sec to knots correctly', () {
       expect(NdbcStationObs.mpsToKnots(1.0), closeTo(1.94384, 0.001));
@@ -29,7 +33,11 @@ LONF1    24.84   -80.60  2026 10 08 21 00  MM    MM    MM   MM  MM   MM  MM 1015
 ''';
 
       final mockClient = MockClient((request) async {
-        return http.Response(mockResponseBody, 200);
+        if (request.url.host == 'www.ndbc.noaa.gov' ||
+            request.url.host == 'api.allorigins.win') {
+          return http.Response(mockResponseBody, 200);
+        }
+        return http.Response('Not Found', 404);
       });
 
       final service = WindService(client: mockClient);
@@ -49,6 +57,30 @@ LONF1    24.84   -80.60  2026 10 08 21 00  MM    MM    MM   MM  MM   MM  MM 1015
       expect(lonf1.windDirectionDeg, isNull);
       expect(lonf1.windSpeedKnots, isNull);
       expect(lonf1.windGustKnots, isNull);
+    });
+
+    test('falls back to proxy endpoint when direct request fails', () async {
+      const mockResponseBody = '''
+#STN       LAT      LON  YYYY MM DD hh mm WDIR WSPD   GST WVHT  DPD APD MWD   PRES  PTDY  ATMP  WTMP  DEWP  VIS   TIDE
+#text      deg      deg   yr mo day hr mn degT  m/s   m/s   m   sec sec degT   hPa   hPa  degC  degC  degC  nmi     ft
+41009    28.51   -80.18  2026 10 08 21 00 180   5.0   7.0  1.2  MM   MM  MM 1014.8    MM  25.9  26.6    MM   MM     MM
+''';
+
+      final mockClient = MockClient((request) async {
+        if (request.url.host == 'www.ndbc.noaa.gov') {
+          throw Exception('CORS network failure');
+        }
+        if (request.url.host == 'api.allorigins.win') {
+          return http.Response(mockResponseBody, 200);
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      final service = WindService(client: mockClient);
+      final stations = await service.fetchNdbcStations();
+
+      expect(stations.length, equals(1));
+      expect(stations.first.stationId, equals('41009'));
     });
   });
 }

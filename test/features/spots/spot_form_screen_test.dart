@@ -10,6 +10,7 @@ import 'package:seabound/features/profile/badge_service.dart';
 import 'package:seabound/features/spots/spot_form_screen.dart';
 
 import '../../helpers/fake_tile_provider.dart';
+import '../../helpers/test_viewport.dart';
 
 class MockFirebaseUser implements User {
   @override
@@ -35,12 +36,7 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('SpotFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final router = GoRouter(
       initialLocation: '/',
@@ -93,12 +89,7 @@ void main() {
 
   testWidgets('SpotFormScreen shows discard dialog when Close is tapped and field has text',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final router = GoRouter(
       initialLocation: '/',

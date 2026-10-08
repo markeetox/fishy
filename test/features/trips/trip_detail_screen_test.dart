@@ -10,6 +10,8 @@ import 'package:seabound/features/trips/trip_detail_screen.dart';
 import 'package:seabound/features/trips/trip_model.dart';
 import 'package:seabound/features/trips/trips_providers.dart';
 
+import '../../helpers/test_viewport.dart';
+
 class MockFirebaseUser implements User {
   @override
   String get uid => 'test_user_id';
@@ -24,12 +26,7 @@ class MockFirebaseUser implements User {
 void main() {
   testWidgets('TripDetailScreen renders long sample strings without overflow and pops when Close is tapped',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final longTitle = 'A' * 80;
     final longLocation = 'Cape Marina Dock B ${'C' * 50}';

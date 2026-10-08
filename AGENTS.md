@@ -18,3 +18,4 @@
   - Bottom nav: 5 circular items (Trips, Spots, Home, Alerts, Profile), Home centered and larger (76dp vs 64dp), strip background height is half the circle height (32dp strip).
   - Spots screen has no top bar or title in map view. Map fills the whole screen with control buttons in 1 row under status bar, followed by a full-width "Community Spots" button.
   - The Add pin button is a red extended FAB (`#D1142A`, white bold text, 3px white border) at the bottom right.
+  - Test viewport: physicalSize 1170x2532 at DPR 3.0 = 390x844 logical.

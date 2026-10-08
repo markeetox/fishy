@@ -11,6 +11,7 @@ import 'package:seabound/features/spots/spot_model.dart';
 import 'package:seabound/features/spots/spots_providers.dart';
 
 import '../../helpers/fake_tile_provider.dart';
+import '../../helpers/test_viewport.dart';
 
 class MockFirebaseUser implements User {
   @override
@@ -26,12 +27,7 @@ class MockFirebaseUser implements User {
 void main() {
   testWidgets('SpotDetailScreen renders long sample strings without overflow and pops when Close is tapped',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final longTitle = 'A' * 80;
     final longAuthor = 'Captain ${'B' * 40}';

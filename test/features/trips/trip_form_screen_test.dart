@@ -9,6 +9,8 @@ import 'package:seabound/features/auth/auth_providers.dart';
 import 'package:seabound/features/profile/badge_service.dart';
 import 'package:seabound/features/trips/trip_form_screen.dart';
 
+import '../../helpers/test_viewport.dart';
+
 class MockFirebaseUser implements User {
   @override
   String get uid => 'test_user_id';
@@ -33,12 +35,7 @@ class MockBadgeService implements BadgeService {
 void main() {
   testWidgets('TripFormScreen contains GradientBackground and Close button; pops without dialog when empty',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final router = GoRouter(
       initialLocation: '/',
@@ -90,12 +87,7 @@ void main() {
 
   testWidgets('TripFormScreen shows discard dialog when Close is tapped and field has text',
       (WidgetTester tester) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 3.0;
+    setPhoneView(tester);
 
     final router = GoRouter(
       initialLocation: '/',

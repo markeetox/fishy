@@ -46,7 +46,7 @@ class MockActiveMapLayersNotifier extends ActiveMapLayersNotifier {
 }
 
 void main() {
-  testWidgets('SpotsScreen renders compact top map controls (Layers & Location) and red FAB',
+  testWidgets('SpotsScreen renders compact top map controls (Layers & Location) and icon-only Add Opinion FAB',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -70,8 +70,8 @@ void main() {
     // Check standalone Community Spots button text is gone from top overlay
     expect(find.text('Community Spots'), findsNothing);
 
-    // Check Extended FAB exists with Add pin label
-    expect(find.text('Add pin'), findsOneWidget);
+    // Check Icon-only FAB exists with Add Opinion tooltip
+    expect(find.byTooltip('Add Opinion'), findsOneWidget);
   });
 
   testWidgets('SpotsScreen displays error banner with Retry button when artificial reefs fails to load',

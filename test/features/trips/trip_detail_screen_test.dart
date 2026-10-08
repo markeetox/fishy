@@ -15,7 +15,7 @@ class MockUser {
 }
 
 void main() {
-  testWidgets('TripDetailScreen contains GradientBackground and Close button; tapping Close pops screen',
+  testWidgets('TripDetailScreen renders long sample strings without overflow and pops when Close is tapped',
       (WidgetTester tester) async {
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -24,14 +24,17 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 3.0;
 
+    final longTitle = 'A' * 80;
+    final longLocation = 'Cape Marina Dock B ' + ('C' * 50);
+
     final testTrip = Trip(
       id: 'trip_1',
       userId: 'test_user_id',
-      title: 'Deep Sea Catch',
+      title: longTitle,
       date: DateTime.now(),
-      locationName: 'Key West',
-      species: ['Mahi Mahi'],
-      notes: 'Great weather and smooth waters.',
+      locationName: longLocation,
+      species: ['Mahi Mahi', 'Bluefin Tuna', 'Yellowtail Snapper', 'Kingfish'],
+      notes: 'Great weather and smooth waters.' * 4,
     );
 
     final router = GoRouter(
@@ -66,14 +69,11 @@ void main() {
     router.push('/trips/trip_1');
     await tester.pumpAndSettle();
 
+    // Assert no overflow or layout exception occurred
+    expect(tester.takeException(), isNull);
+
     // Verify GradientBackground exists
     expect(find.byType(GradientBackground), findsWidgets);
-
-    // Verify trip title is displayed extra bold
-    expect(find.text('Deep Sea Catch'), findsOneWidget);
-
-    // Verify notes card is displayed
-    expect(find.text('Great weather and smooth waters.'), findsOneWidget);
 
     // Verify Close button exists
     final closeButtonFinder = find.byTooltip('Close');

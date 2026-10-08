@@ -140,6 +140,7 @@ class SpotDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       spot.name,
+                      softWrap: true,
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
@@ -147,42 +148,61 @@ class SpotDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      cross: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 18,
-                          color: tokens.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: spot.userId.isNotEmpty
-                              ? () => context.push('/profile/user/${spot.userId}')
-                              : null,
-                          borderRadius: BorderRadius.circular(4),
-                          child: Text(
-                            'Shared by ${spot.authorName}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              size: 18,
                               color: tokens.textSecondary,
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: InkWell(
+                                onTap: spot.userId.isNotEmpty
+                                    ? () => context.push('/profile/user/${spot.userId}')
+                                    : null,
+                                borderRadius: BorderRadius.circular(4),
+                                child: Text(
+                                  'Shared by ${spot.authorName}',
+                                  softWrap: true,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 16,
-                          color: tokens.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          formattedDate,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.textSecondary,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 16,
+                              color: tokens.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                formattedDate,
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -252,6 +272,7 @@ class SpotDetailScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           spot.description,
+                          softWrap: true,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,

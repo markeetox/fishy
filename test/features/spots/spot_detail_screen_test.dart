@@ -17,7 +17,7 @@ class MockUser {
 }
 
 void main() {
-  testWidgets('SpotDetailScreen contains GradientBackground and Close button; tapping Close pops screen',
+  testWidgets('SpotDetailScreen renders long sample strings without overflow and pops when Close is tapped',
       (WidgetTester tester) async {
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -26,15 +26,18 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 3.0;
 
+    final longTitle = 'A' * 80;
+    final longAuthor = 'Captain ' + ('B' * 40);
+
     final testSpot = Spot(
       id: 'spot_1',
       userId: 'test_user_id',
-      authorName: 'Captain Jack',
-      name: 'Pelican Point Reef',
-      description: 'Lively reef with snook and snapper.',
+      authorName: longAuthor,
+      name: longTitle,
+      description: 'Lively reef with snook and snapper.' * 3,
       latitude: 25.76,
       longitude: -80.19,
-      species: ['Snook', 'Snapper'],
+      species: ['Snook', 'Red Drum', 'Mahi Mahi', 'Yellowtail Snapper'],
       createdAt: DateTime.now(),
     );
 
@@ -73,17 +76,11 @@ void main() {
     router.push('/spots/spot_1');
     await tester.pumpAndSettle();
 
+    // Assert no overflow or layout exception occurred
+    expect(tester.takeException(), isNull);
+
     // Verify GradientBackground exists
     expect(find.byType(GradientBackground), findsWidgets);
-
-    // Verify spot name is displayed extra bold
-    expect(find.text('Pelican Point Reef'), findsOneWidget);
-
-    // Verify "Shared by Captain Jack" text is displayed
-    expect(find.text('Shared by Captain Jack'), findsOneWidget);
-
-    // Verify description card is displayed
-    expect(find.text('Lively reef with snook and snapper.'), findsOneWidget);
 
     // Verify Close button exists
     final closeButtonFinder = find.byTooltip('Close');

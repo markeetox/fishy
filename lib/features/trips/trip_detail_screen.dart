@@ -128,6 +128,7 @@ class TripDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       trip.title,
+                      softWrap: true,
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
@@ -143,12 +144,15 @@ class TripDetailScreen extends ConsumerWidget {
                           color: tokens.textSecondary,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          formattedDate,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.textSecondary,
+                        Expanded(
+                          child: Text(
+                            formattedDate,
+                            softWrap: true,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -165,6 +169,7 @@ class TripDetailScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             trip.locationName,
+                            softWrap: true,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -222,6 +227,7 @@ class TripDetailScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           trip.notes,
+                          softWrap: true,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,

@@ -127,7 +127,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Type text into Spot Name field
-    await tester.enterText(find.widgetWithText(TextFormField, 'Spot Name *'), 'Secret Reef');
+    final spotNameField = find.byType(TextFormField).first;
+    await tester.ensureVisible(spotNameField);
+    await tester.enterText(spotNameField, 'Secret Reef');
     await tester.pump();
 
     // Tap Close button

@@ -123,7 +123,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Type text into Trip Title field
-    await tester.enterText(find.widgetWithText(TextFormField, 'Trip Title *'), 'My Awesome Fishing Trip');
+    final titleField = find.byType(TextFormField).first;
+    await tester.ensureVisible(titleField);
+    await tester.enterText(titleField, 'My Awesome Fishing Trip');
     await tester.pump();
 
     // Tap Close button

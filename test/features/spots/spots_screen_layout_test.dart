@@ -46,7 +46,7 @@ class MockActiveMapLayersNotifier extends ActiveMapLayersNotifier {
 }
 
 void main() {
-  testWidgets('SpotsScreen renders map layers button, community spots button, and red FAB',
+  testWidgets('SpotsScreen renders compact top map controls (Layers & Location) and red FAB',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -61,11 +61,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Check Map Layers button exists
-    expect(find.text('Layers'), findsOneWidget);
+    // Check Layers button tooltip exists
+    expect(find.byTooltip('Layers'), findsOneWidget);
 
-    // Check Community Spots button exists
-    expect(find.text('Community Spots'), findsOneWidget);
+    // Check My Location button tooltip exists
+    expect(find.byTooltip('My Location'), findsOneWidget);
+
+    // Check standalone Community Spots button text is gone from top overlay
+    expect(find.text('Community Spots'), findsNothing);
 
     // Check Extended FAB exists with Add pin label
     expect(find.text('Add pin'), findsOneWidget);

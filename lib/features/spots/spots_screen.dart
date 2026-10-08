@@ -708,7 +708,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
-        // TOP CONTROLS OVERLAY - UNDER STATUS BAR
+        // TOP CONTROLS OVERLAY - COMPACT SINGLE HORIZONTAL ROW
         Positioned(
           top: 0,
           left: 0,
@@ -716,146 +716,96 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
+              child: Row(
                 children: [
-                  // Row 1: Map Control Buttons (Layers, My Location, Refresh)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: _openLayersDialog,
-                          borderRadius: BorderRadius.circular(28),
-                          child: Container(
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: OceanThemeExtension.defaultTokens.surface,
-                              borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: OceanThemeExtension.defaultTokens.cyan,
-                                width: 2,
-                              ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black45,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
+                  // Layers Button
+                  Tooltip(
+                    message: 'Layers',
+                    child: InkWell(
+                      onTap: _openLayersDialog,
+                      borderRadius: BorderRadius.circular(26),
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: OceanThemeExtension.defaultTokens.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: OceanThemeExtension.defaultTokens.cyan,
+                            width: 2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black45,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.layers_outlined, size: 24, color: Colors.white),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'Layers',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
-                                ),
-                                if (activeCount > 0) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF00E5FF),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      '$activeCount',
-                                      style: const TextStyle(
-                                        color: Color(0xFF001018),
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900,
-                                      ),
+                          ],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(Icons.layers_outlined, size: 24, color: Colors.white),
+                            if (activeCount > 0)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF00E5FF),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$activeCount',
+                                    style: const TextStyle(
+                                      color: Color(0xFF001018),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: InkWell(
-                          onTap: _isLocating ? null : _centerOnMyLocation,
-                          borderRadius: BorderRadius.circular(28),
-                          child: Container(
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: OceanThemeExtension.defaultTokens.surface,
-                              borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: OceanThemeExtension.defaultTokens.cyan,
-                                width: 2,
+                                ),
                               ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black45,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _isLocating
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.my_location, size: 24, color: Colors.white),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'Location',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 10),
 
-                  // Row 2: FULL-WIDTH "Community Spots" Button opening Spots List view
-                  InkWell(
-                    onTap: widget.onToggleView,
-                    borderRadius: BorderRadius.circular(28),
-                    child: Container(
-                      height: 56,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: OceanThemeExtension.defaultTokens.surface,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: OceanThemeExtension.defaultTokens.cyan,
-                          width: 2,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black45,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
+                  // My Location Button
+                  Tooltip(
+                    message: 'My Location',
+                    child: InkWell(
+                      onTap: _isLocating ? null : _centerOnMyLocation,
+                      borderRadius: BorderRadius.circular(26),
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: OceanThemeExtension.defaultTokens.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: OceanThemeExtension.defaultTokens.cyan,
+                            width: 2,
                           ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.list_outlined, size: 24, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            'Community Spots',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black45,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Center(
+                          child: _isLocating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.my_location, size: 24, color: Colors.white),
+                        ),
                       ),
                     ),
                   ),

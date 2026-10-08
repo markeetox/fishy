@@ -58,30 +58,31 @@ class _AppBottomNavState extends State<AppBottomNav>
 
   static const double _selectionRadius = 52.0;
 
+  // 4 destinations distributed along a upper semicircular arch (R = 125dp)
   List<FanItemData> get _fanItems => [
-        FanItemData(
-          index: 0,
-          label: 'Trips',
-          icon: Icons.directions_boat_outlined,
-          selectedIcon: Icons.directions_boat,
-          dx: 0.0,
-          dy: -135.0,
-        ),
         FanItemData(
           index: 1,
           label: 'Spots',
           icon: Icons.place_outlined,
           selectedIcon: Icons.place,
-          dx: -95.0,
-          dy: -55.0,
+          dx: -113.3,
+          dy: -52.8,
+        ),
+        FanItemData(
+          index: 0,
+          label: 'Trips',
+          icon: Icons.directions_boat_outlined,
+          selectedIcon: Icons.directions_boat,
+          dx: -52.8,
+          dy: -113.3,
         ),
         FanItemData(
           index: 3,
           label: 'Alerts',
           icon: Icons.notifications_outlined,
           selectedIcon: Icons.notifications,
-          dx: 95.0,
-          dy: -55.0,
+          dx: 52.8,
+          dy: -113.3,
           hasBadge: widget.hasAlerts,
         ),
         FanItemData(
@@ -89,8 +90,8 @@ class _AppBottomNavState extends State<AppBottomNav>
           label: 'Profile',
           icon: Icons.person_outline,
           selectedIcon: Icons.person,
-          dx: 0.0,
-          dy: -75.0,
+          dx: 113.3,
+          dy: -52.8,
         ),
       ];
 
@@ -257,7 +258,7 @@ class _AppBottomNavState extends State<AppBottomNav>
                 ),
               ),
 
-            // Radial Fan Menu Items
+            // Radial Fan Menu Items along Semicircular Arch
             if (_isFanOpen)
               ..._fanItems.map((item) {
                 final isSelected = _highlightedIndex == item.index;

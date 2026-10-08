@@ -69,6 +69,13 @@ final availableLayers = [
     defaultOn: false,
     group: 'Weather',
   ),
+  const MapLayerItem(
+    id: MapLayerConfig.windObsId,
+    displayName: 'Wind & Buoys',
+    icon: Icons.air,
+    defaultOn: false,
+    group: 'Weather',
+  ),
 
   // Tides Group
   const MapLayerItem(

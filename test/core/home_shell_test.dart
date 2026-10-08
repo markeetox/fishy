@@ -9,7 +9,7 @@ import '../helpers/pump_app.dart';
 
 void main() {
   group('AppBottomNav Widget Tests', () {
-    testWidgets('renders five items in order: Trips, Spots, Home, Alerts, Profile',
+    testWidgets('default state shows only single centered Home button',
         (WidgetTester tester) async {
       await pumpApp(
         tester,
@@ -19,17 +19,34 @@ void main() {
         ),
       );
 
-      final texts = find.byType(Text);
-      final labels = texts
-          .evaluate()
-          .map((e) => (e.widget as Text).data)
-          .where((data) => data != null)
-          .toList();
-
-      expect(labels, containsAllInOrder(['Trips', 'Spots', 'Home', 'Alerts', 'Profile']));
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Trips'), findsNothing);
+      expect(find.text('Spots'), findsNothing);
+      expect(find.text('Alerts'), findsNothing);
+      expect(find.text('Profile'), findsNothing);
     });
 
-    testWidgets('Home item is larger than other navigation items',
+    testWidgets('short tap on Home calls onSelect with Home index (2)',
+        (WidgetTester tester) async {
+      int? selectedIndex;
+
+      await pumpApp(
+        tester,
+        AppBottomNav(
+          currentIndex: 0,
+          onSelect: (index) {
+            selectedIndex = index;
+          },
+        ),
+      );
+
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+
+      expect(selectedIndex, equals(2));
+    });
+
+    testWidgets('long press on Home button opens radial fan menu',
         (WidgetTester tester) async {
       await pumpApp(
         tester,
@@ -39,27 +56,26 @@ void main() {
         ),
       );
 
-      final homeFinder = find.ancestor(
-        of: find.text('Home'),
-        matching: find.byType(Container),
-      ).first;
+      expect(find.text('Trips'), findsNothing);
 
-      final tripsFinder = find.ancestor(
-        of: find.text('Trips'),
-        matching: find.byType(Container),
-      ).first;
+      // Trigger long press gesture on Home button
+      final homeFinder = find.text('Home');
+      final TestGesture gesture = await tester.startGesture(tester.getCenter(homeFinder));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
-      final Size homeSize = tester.getSize(homeFinder);
-      final Size tripsSize = tester.getSize(tripsFinder);
+      // Fan menu should now be open, displaying destination labels
+      expect(find.text('Trips'), findsOneWidget);
+      expect(find.text('Spots'), findsOneWidget);
+      expect(find.text('Alerts'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
 
-      expect(homeSize.width, equals(76.0));
-      expect(homeSize.height, equals(76.0));
-      expect(tripsSize.width, equals(64.0));
-      expect(tripsSize.height, equals(64.0));
-      expect(homeSize.width, greaterThan(tripsSize.width));
+      // Release gesture
+      await gesture.up();
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('tapping an item calls onSelect with correct index',
+    testWidgets('long press and drag to destination selects item on release',
         (WidgetTester tester) async {
       int? selectedIndex;
 
@@ -73,38 +89,58 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Spots'));
+      final homeCenter = tester.getCenter(find.text('Home'));
+      final TestGesture gesture = await tester.startGesture(homeCenter);
+
+      // Hold down to trigger long press
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      expect(selectedIndex, equals(1));
-
-      await tester.tap(find.text('Profile'));
+      // Drag upward toward Trips destination (dx=0, dy=-135)
+      await gesture.moveTo(Offset(homeCenter.dx, homeCenter.dy - 135));
       await tester.pumpAndSettle();
 
-      expect(selectedIndex, equals(4));
+      // Release gesture
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(selectedIndex, equals(0)); // Trips index
     });
 
-    testWidgets('selected item is highlighted with cyan background/text color',
+    testWidgets('releasing in center / cancel zone closes fan without navigating',
         (WidgetTester tester) async {
+      int? selectedIndex;
+
       await pumpApp(
         tester,
         AppBottomNav(
-          currentIndex: 0, // Trips selected
-          onSelect: (_) {},
+          currentIndex: 2,
+          onSelect: (index) {
+            selectedIndex = index;
+          },
         ),
       );
 
-      final tripsText = tester.widget<Text>(find.text('Trips'));
-      final spotsText = tester.widget<Text>(find.text('Spots'));
+      final homeCenter = tester.getCenter(find.text('Home'));
+      final TestGesture gesture = await tester.startGesture(homeCenter);
 
-      // Selected item text color should be onCyan (0xFF001018), non-selected is translucent white
-      expect(tripsText.style?.color, equals(const Color(0xFF001018)));
-      expect(spotsText.style?.color, isNot(equals(const Color(0xFF001018))));
+      // Hold down to open fan
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Trips'), findsOneWidget);
+
+      // Release near center (not over any fan item target)
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(selectedIndex, isNull);
+      expect(find.text('Trips'), findsNothing);
     });
   });
 
   group('HomeShellScreen StatefulShellRoute Integration Tests', () {
-    testWidgets('a signed-in user starts on Home when initialLocation is /home',
+    testWidgets('a signed-in user starts on Home and can navigate using fan menu',
         (WidgetTester tester) async {
       final router = GoRouter(
         initialLocation: '/home',
@@ -144,11 +180,20 @@ void main() {
 
       expect(find.text('Home Screen'), findsOneWidget);
 
-      // Tap Trips tab
-      await tester.tap(find.text('Trips'));
+      // Long press Home button to open fan
+      final homeCenter = tester.getCenter(find.text('Home'));
+      final TestGesture gesture = await tester.startGesture(homeCenter);
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      expect(find.text('Trips Screen'), findsOneWidget);
+      // Drag to Spots (dx=-95, dy=-55)
+      await gesture.moveTo(Offset(homeCenter.dx - 95, homeCenter.dy - 55));
+      await tester.pumpAndSettle();
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Spots Screen'), findsOneWidget);
     });
   });
 }

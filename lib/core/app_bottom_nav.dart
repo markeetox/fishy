@@ -234,7 +234,7 @@ class _AppBottomNavState extends State<AppBottomNav>
       bottom: true,
       top: false,
       child: SizedBox(
-        height: 80,
+        height: 98,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
@@ -273,7 +273,7 @@ class _AppBottomNavState extends State<AppBottomNav>
                     final scale = progress * (isSelected ? 1.18 : 1.0);
 
                     return Transform.translate(
-                      offset: Offset(curDx, curDy - 8.0),
+                      offset: Offset(curDx, curDy - 26.0),
                       child: Transform.scale(
                         scale: scale,
                         child: Opacity(
@@ -382,7 +382,7 @@ class _AppBottomNavState extends State<AppBottomNav>
 
             // Centered Home / Menu Button
             Positioned(
-              bottom: 8,
+              bottom: 26,
               child: Listener(
                 key: _homeButtonKey,
                 onPointerDown: _onPointerDown,

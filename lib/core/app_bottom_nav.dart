@@ -228,8 +228,6 @@ class _AppBottomNavState extends State<AppBottomNav>
     final tokens = Theme.of(context).extension<OceanThemeExtension>() ??
         OceanThemeExtension.defaultTokens;
 
-    final isHomeSelected = widget.currentIndex == 2;
-
     return SafeArea(
       bottom: true,
       top: false,
@@ -384,64 +382,21 @@ class _AppBottomNavState extends State<AppBottomNav>
                 );
               }),
 
-            // Centered Home / Menu Button
+            // Centered Home / Menu Button (compass PNG asset)
             Positioned(
               bottom: 26,
-              child: ClipOval(
-                child: Listener(
-                  key: _homeButtonKey,
-                  onPointerDown: _onPointerDown,
-                  onPointerMove: _onPointerMove,
-                  onPointerUp: _onPointerUp,
-                  onPointerCancel: _onPointerCancel,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isHomeSelected || _isFanOpen
-                          ? tokens.cyan
-                          : const Color(0xFF0B2250),
-                      border: Border.all(
-                        color: tokens.cyan,
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _isFanOpen
-                              ? tokens.cyan.withValues(alpha: 0.5)
-                              : Colors.black45,
-                          blurRadius: _isFanOpen ? 12 : 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isHomeSelected || _isFanOpen
-                              ? Icons.home
-                              : Icons.home_outlined,
-                          size: 28,
-                          color: isHomeSelected || _isFanOpen
-                              ? tokens.onCyan
-                              : Colors.white,
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          'Home',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: isHomeSelected || _isFanOpen
-                                ? tokens.onCyan
-                                : Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+              child: Listener(
+                key: _homeButtonKey,
+                onPointerDown: _onPointerDown,
+                onPointerMove: _onPointerMove,
+                onPointerUp: _onPointerUp,
+                onPointerCancel: _onPointerCancel,
+                child: SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: Image.asset(
+                    'assets/ui/home.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

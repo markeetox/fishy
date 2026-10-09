@@ -19,7 +19,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
       expect(find.text('Trips'), findsNothing);
       expect(find.text('Spots'), findsNothing);
       expect(find.text('Alerts'), findsNothing);
@@ -40,7 +40,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Home'));
+      await tester.tap(find.byType(Image));
       await tester.pumpAndSettle();
 
       expect(selectedIndex, equals(2));
@@ -59,7 +59,7 @@ void main() {
       expect(find.text('Trips'), findsNothing);
 
       // Trigger long press gesture on Home button
-      final homeFinder = find.text('Home');
+      final homeFinder = find.byType(Image);
       final TestGesture gesture = await tester.startGesture(tester.getCenter(homeFinder));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
@@ -89,7 +89,7 @@ void main() {
         ),
       );
 
-      final homeCenter = tester.getCenter(find.text('Home'));
+      final homeCenter = tester.getCenter(find.byType(Image));
       final TestGesture gesture = await tester.startGesture(homeCenter);
 
       // Hold down to trigger long press
@@ -121,7 +121,7 @@ void main() {
         ),
       );
 
-      final homeCenter = tester.getCenter(find.text('Home'));
+      final homeCenter = tester.getCenter(find.byType(Image));
       final TestGesture gesture = await tester.startGesture(homeCenter);
 
       // Hold down to open fan
@@ -181,7 +181,7 @@ void main() {
       expect(find.text('Home Screen'), findsOneWidget);
 
       // Long press Home button to open fan
-      final homeCenter = tester.getCenter(find.text('Home'));
+      final homeCenter = tester.getCenter(find.byType(Image));
       final TestGesture gesture = await tester.startGesture(homeCenter);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();

@@ -9,15 +9,8 @@ final availableLayers = [
   // Structure Group
   const MapLayerItem(
     id: MapLayerConfig.artificialReefsId,
-    displayName: 'Artificial reefs',
+    displayName: 'Artificial Reefs',
     icon: Icons.anchor,
-    defaultOn: false,
-    group: 'Structure',
-  ),
-  const MapLayerItem(
-    id: MapLayerConfig.reefHabitatId,
-    displayName: 'Reef habitat',
-    icon: Icons.grass,
     defaultOn: false,
     group: 'Structure',
   ),

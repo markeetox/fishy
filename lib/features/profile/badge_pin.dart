@@ -43,8 +43,6 @@ class BadgePin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderRingColor = isEarned ? Colors.white : Colors.grey.shade600;
-
     Widget badgeImageWidget = Image.asset(
       badge.imageAsset,
       fit: BoxFit.cover,
@@ -72,44 +70,33 @@ class BadgePin extends StatelessWidget {
       );
     }
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isEarned ? Colors.blue.shade900 : Colors.grey.shade800,
-            border: Border.all(
-              color: borderRingColor,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ClipOval(child: badgeImageWidget),
-        ),
-        if (!isEarned)
-          Container(
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
             width: size,
             height: size,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black38,
-            ),
-            child: Icon(
-              Icons.lock,
-              size: size * 0.35,
-              color: Colors.white,
-            ),
+            child: badgeImageWidget,
           ),
-      ],
+          if (!isEarned)
+            Container(
+              width: size * 0.45,
+              height: size * 0.45,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black54,
+              ),
+              child: Icon(
+                Icons.lock,
+                size: size * 0.28,
+                color: Colors.white,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

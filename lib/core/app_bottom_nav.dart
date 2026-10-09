@@ -239,7 +239,7 @@ class _AppBottomNavState extends State<AppBottomNav>
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
-            // Circular backdrop glow when fan menu is open
+            // Circular backdrop glow when fan menu is open (shifted down by 40% of its size)
             if (_isFanOpen)
               Positioned(
                 bottom: 10,
@@ -247,12 +247,15 @@ class _AppBottomNavState extends State<AppBottomNav>
                   animation: _expandAnimation,
                   builder: (context, child) {
                     final size = 88.0 + (_expandAnimation.value * 280.0);
-                    return Container(
-                      width: size,
-                      height: size,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.35 * _expandAnimation.value),
+                    return Transform.translate(
+                      offset: Offset(0, size * 0.40),
+                      child: Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.35 * _expandAnimation.value),
+                        ),
                       ),
                     );
                   },

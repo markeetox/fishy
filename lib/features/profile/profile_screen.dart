@@ -58,7 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              BadgePin(badge: badge, isEarned: isEarned, size: 80),
+              BadgePin(badge: badge, isEarned: isEarned, size: 120),
               const SizedBox(height: 12),
               Text(
                 badge.name,
@@ -271,10 +271,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 110,
+                          maxCrossAxisExtent: 130,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
-                          childAspectRatio: 0.85,
+                          childAspectRatio: 0.80,
                         ),
                         itemCount: Catalog.starterBadges.length,
                         itemBuilder: (context, index) {
@@ -290,7 +290,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 BadgePin(
                                   badge: badge,
                                   isEarned: isEarned,
-                                  size: 56,
+                                  size: 84,
                                 ),
                                 const SizedBox(height: 6),
                                 Text(

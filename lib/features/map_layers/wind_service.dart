@@ -77,9 +77,8 @@ class WindService {
       final encodedTarget = Uri.encodeComponent(targetUrl);
 
       final proxies = [
-        'https://corsproxy.io/?$encodedTarget',
-        'https://api.codetabs.com/v1/proxy?quest=$encodedTarget',
         'https://api.allorigins.win/raw?url=$encodedTarget',
+        'https://thingproxy.freeboard.io/fetch/$targetUrl',
       ];
 
       http.Response? webResponse;

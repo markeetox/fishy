@@ -317,7 +317,6 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final chlorophyllDateAsync = ref.watch(chlorophyllDateProvider);
 
     final showArtificialReefs = activeLayers.contains(MapLayerConfig.artificialReefsId);
-    final showReefHabitat = activeLayers.contains(MapLayerConfig.reefHabitatId);
     final showSst = activeLayers.contains(MapLayerConfig.seaTemperatureId);
     final showChlorophyll = activeLayers.contains(MapLayerConfig.chlorophyllId);
     final showTides = activeLayers.contains(MapLayerConfig.tideStationsId);
@@ -369,7 +368,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final isPhoneScreen = MediaQuery.of(context).size.width < 600;
     final shouldShowLegendContent = !isPhoneScreen || _isLegendExpanded;
 
-    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll || showArtificialReefs || showReefHabitat || showWindObs;
+    final hasAnyLegend = showDepth || showWaves || showSst || showChlorophyll || showArtificialReefs || showWindObs;
 
     return Stack(
       children: [
@@ -450,20 +449,6 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 error: (e, st) => const SizedBox.shrink(),
               ),
 
-            // FWC Unified Reef Habitat Polygon Overlay (WMS)
-            if (showReefHabitat)
-              TileLayer(
-                wmsOptions: WMSTileLayerOptions(
-                  baseUrl: MapLayerConfig.fwcReefHabitatWmsUrl,
-                  layers: const ['0', '1', '2', '3', '4'],
-                  transparent: true,
-                  format: 'image/png32',
-                ),
-                maxNativeZoom: 18,
-                maxZoom: 20,
-                tileProvider: NetworkTileProvider(),
-                tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
-              ),
 
             // Depth & Bathymetry Layer (GEBCO colour-shaded WMS + OpenSeaMap seamarks)
             if (showDepth) ...[
@@ -514,7 +499,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
 
                   return TileLayer(
                     urlTemplate: tileUrl,
-                    tileSize: 512,
+                    tileDimension: 512,
                     zoomOffset: -1,
                     maxNativeZoom: 12,
                     maxZoom: 20,
@@ -998,14 +983,10 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                             const SizedBox(height: 8),
 
                             // Artificial Reefs & Habitat Info
-                            if (showArtificialReefs || showReefHabitat) ...[
-                              Text(
-                                showArtificialReefs && showReefHabitat
-                                    ? 'Reefs & Habitat'
-                                    : showArtificialReefs
-                                        ? 'Artificial Reefs'
-                                        : 'Reef Habitat',
-                                style: const TextStyle(
+                            if (showArtificialReefs) ...[
+                              const Text(
+                                'Artificial Reefs',
+                                style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,

@@ -28,28 +28,20 @@ class RadarDataResponse {
   });
 
   RadarFrame? getFrameForOffset(int hourOffset) {
-    if (hourOffset <= 0) {
-      if (past.isNotEmpty) return past.last;
-      return null;
+    final allFrames = [...past, ...nowcast];
+    if (allFrames.isEmpty) return null;
+
+    if (hourOffset == 0) {
+      return past.isNotEmpty ? past.last : allFrames.first;
     }
 
-    if (nowcast.isEmpty) {
-      if (past.isNotEmpty) return past.last;
-      return null;
+    // Map offset step to available frame array index for noticeable frame progression
+    if (hourOffset > 0 && nowcast.isNotEmpty) {
+      final idx = ((hourOffset / 24.0) * (nowcast.length - 1)).round().clamp(0, nowcast.length - 1);
+      return nowcast[idx];
     }
 
-    final targetTimeSec = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + (hourOffset * 3600);
-    RadarFrame closest = nowcast.first;
-    int minDiff = (closest.time - targetTimeSec).abs();
-
-    for (final frame in nowcast) {
-      final diff = (frame.time - targetTimeSec).abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = frame;
-      }
-    }
-    return closest;
+    return past.last;
   }
 
   String? getTileUrlForOffset(int hourOffset, {int tileSize = 256, int colorScheme = 2, bool smooth = true}) {

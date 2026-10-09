@@ -70,7 +70,9 @@ LONF1    24.84   -80.60  2026 10 08 21 00  MM    MM    MM   MM  MM   MM  MM 1015
         if (request.url.host == 'www.ndbc.noaa.gov') {
           throw Exception('CORS network failure');
         }
-        if (request.url.host == 'api.allorigins.win') {
+        if (request.url.host == 'corsproxy.io' ||
+            request.url.host == 'api.codetabs.com' ||
+            request.url.host == 'api.allorigins.win') {
           return http.Response(mockResponseBody, 200);
         }
         return http.Response('Not Found', 404);

@@ -22,16 +22,13 @@ class FloatingTopBarButton extends StatelessWidget {
     final tokens = Theme.of(context).extension<OceanThemeExtension>() ??
         OceanThemeExtension.defaultTokens;
 
-    final borderColor = isRedScreen ? Colors.white : tokens.cyan;
-
     Widget button = Container(
       width: 56,
       height: 56,
-      decoration: BoxDecoration(
-        color: tokens.surface,
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 2),
-        boxShadow: const [
+        gradient: ChromeBorder.gradient,
+        boxShadow: [
           BoxShadow(
             color: Colors.black45,
             blurRadius: 6,
@@ -39,14 +36,23 @@ class FloatingTopBarButton extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: IconButton(
-          icon: Icon(icon, size: 28, color: tokens.text),
-          onPressed: onPressed,
-          tooltip: tooltip,
+      child: Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: tokens.surface,
+            shape: BoxShape.circle,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: Icon(icon, size: 28, color: tokens.text),
+              onPressed: onPressed,
+              tooltip: tooltip,
+            ),
+          ),
         ),
       ),
     );

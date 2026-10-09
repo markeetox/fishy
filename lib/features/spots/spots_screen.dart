@@ -825,29 +825,6 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 }).toList(),
               ),
 
-            RichAttributionWidget(
-              attributions: [
-                if (showArtificialReefs || showReefHabitat)
-                  TextSourceAttribution(
-                    'Data: Florida Fish and Wildlife Conservation Commission (FWC)',
-                    onTap: () {},
-                  ),
-                if (showSst || showChlorophyll)
-                  TextSourceAttribution(
-                    'Imagery: NASA GIBS / Worldview',
-                    onTap: () {},
-                  ),
-                if (showWaves)
-                  TextSourceAttribution(
-                    'Wave data: Open-Meteo / DWD',
-                    onTap: () {},
-                  ),
-                TextSourceAttribution(
-                  'OpenStreetMap & NOAA contributors',
-                  onTap: () {},
-                ),
-              ],
-            ),
           ],
         ),
 
@@ -1432,26 +1409,49 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // ICON-ONLY FAB AT BOTTOM RIGHT: "Add Opinion" (vertically aligned with Home button at bottom: 26)
+        // POINTER FAB & ATTRIBUTION AT BOTTOM-LEFT
         Positioned(
           bottom: 26,
-          right: 16,
+          left: 16,
           child: SafeArea(
-            child: Tooltip(
-              message: 'Add Opinion',
-              child: FloatingActionButton(
-                heroTag: 'add_pin_fab',
-                backgroundColor: const Color(0xFFD1142A),
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(
-                  side: BorderSide(color: Colors.white, width: 3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Tooltip(
+                  message: 'Add Opinion',
+                  child: FloatingActionButton(
+                    heroTag: 'add_pin_fab',
+                    backgroundColor: const Color(0xFFD1142A),
+                    foregroundColor: Colors.white,
+                    shape: const CircleBorder(
+                      side: BorderSide(color: Colors.white, width: 3),
+                    ),
+                    elevation: 6,
+                    onPressed: () {
+                      context.push('/spots/add');
+                    },
+                    child: const Icon(Icons.add_location_alt, size: 26, color: Colors.white),
+                  ),
                 ),
-                elevation: 6,
-                onPressed: () {
-                  context.push('/spots/add');
-                },
-                child: const Icon(Icons.add_location_alt, size: 26, color: Colors.white),
-              ),
+                const SizedBox(height: 6),
+                // Map Attribution under Pointer FAB
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '© OpenStreetMap, NOAA & FWC',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

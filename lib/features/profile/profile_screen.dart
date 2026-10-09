@@ -375,21 +375,26 @@ class _CircleStatTile extends StatelessWidget {
         Container(
           width: 88,
           height: 88,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            color: OceanThemeExtension.defaultTokens.surface,
-            border: Border.all(
-              color: OceanThemeExtension.defaultTokens.cyan,
-              width: 3,
-            ),
+            gradient: ChromeBorder.gradient,
           ),
-          child: Center(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(3.0),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: OceanThemeExtension.defaultTokens.surface,
+              ),
+              child: Center(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),

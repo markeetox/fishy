@@ -298,15 +298,7 @@ class _AppBottomNavState extends State<AppBottomNav>
                           height: 56,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected
-                                ? tokens.cyan
-                                : isCurrentTab
-                                    ? tokens.cyan.withValues(alpha: 0.85)
-                                    : const Color(0xFF0B2250),
-                            border: Border.all(
-                              color: tokens.cyan,
-                              width: 3,
-                            ),
+                            gradient: ChromeBorder.gradient,
                             boxShadow: [
                               BoxShadow(
                                 color: isSelected
@@ -318,54 +310,60 @@ class _AppBottomNavState extends State<AppBottomNav>
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              alignment: Alignment.center,
-                              children: [
-                                Icon(
-                                  isSelected || isCurrentTab
-                                      ? item.selectedIcon
-                                      : item.icon,
-                                  size: 24,
-                                  color: isSelected
-                                      ? tokens.onCyan
-                                      : isCurrentTab
+                          child: Padding(
+                            padding: const EdgeInsets.all(3.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? tokens.cyan
+                                    : isCurrentTab
+                                        ? tokens.cyan.withValues(alpha: 0.85)
+                                        : const Color(0xFF0B2250),
+                              ),
+                              child: Center(
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Icon(
+                                      isSelected || isCurrentTab
+                                          ? item.selectedIcon
+                                          : item.icon,
+                                      size: 24,
+                                      color: isSelected
                                           ? tokens.onCyan
-                                          : Colors.white,
-                                ),
-                                if (item.hasBadge)
-                                  Positioned(
-                                    right: -2,
-                                    top: -2,
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
+                                          : isCurrentTab
+                                              ? tokens.onCyan
+                                              : Colors.white,
                                     ),
-                                  ),
-                              ],
+                                    if (item.hasBadge)
+                                      Positioned(
+                                        right: -2,
+                                        top: -2,
+                                        child: Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Container(
+                        ChromeBorderContainer(
+                          borderRadius: BorderRadius.circular(8),
+                          borderWidth: 1.5,
+                          backgroundColor: const Color(0xFF0B2250).withValues(alpha: 0.9),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0B2250).withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isSelected
-                                  ? tokens.cyan
-                                  : Colors.white24,
-                              width: 1,
-                            ),
                           ),
                           child: Text(
                             item.label,

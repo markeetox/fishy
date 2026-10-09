@@ -89,6 +89,84 @@ class OceanThemeExtension extends ThemeExtension<OceanThemeExtension> {
   }
 }
 
+class ChromeBorder {
+  static const Gradient gradient = LinearGradient(
+    colors: [
+      Color(0xFFFFFFFF),
+      Color(0xFFB0B0B0),
+      Color(0xFFE8E8E8),
+      Color(0xFF707070),
+      Color(0xFFD0D0D0),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static BoxDecoration boxDecoration({
+    required BorderRadius borderRadius,
+    Color backgroundColor = const Color(0xFF0B2250),
+    double borderWidth = 2.0,
+    List<BoxShadow>? boxShadow,
+  }) {
+    return BoxDecoration(
+      borderRadius: borderRadius,
+      gradient: gradient,
+      boxShadow: boxShadow,
+    );
+  }
+}
+
+class ChromeBorderContainer extends StatelessWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  final Color backgroundColor;
+  final double borderWidth;
+  final List<BoxShadow>? boxShadow;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final BoxConstraints? constraints;
+
+  const ChromeBorderContainer({
+    super.key,
+    required this.child,
+    required this.borderRadius,
+    this.backgroundColor = const Color(0xFF0B2250),
+    this.borderWidth = 2.0,
+    this.boxShadow,
+    this.padding,
+    this.margin,
+    this.constraints,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: margin,
+      constraints: constraints,
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        gradient: ChromeBorder.gradient,
+        boxShadow: boxShadow,
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(borderWidth),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(
+              Radius.circular(
+                (borderRadius.topLeft.x - borderWidth).clamp(0.0, double.infinity),
+              ),
+            ),
+            color: backgroundColor,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class AppTheme {
   static const tokens = OceanThemeExtension.defaultTokens;
 

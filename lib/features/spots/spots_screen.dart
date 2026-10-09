@@ -379,6 +379,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           options: MapOptions(
             initialCenter: initialCenter,
             initialZoom: widget.spots.isNotEmpty ? 10.0 : 9.0,
+            maxZoom: 20.0,
             onMapReady: () {
               final bounds = _mapController.camera.visibleBounds;
               setState(() {
@@ -402,6 +403,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             TileLayer(
               urlTemplate: MapLayerConfig.openStreetMapTileUrl,
               userAgentPackageName: 'com.onerevamp.seabound',
+              maxNativeZoom: 19,
+              maxZoom: 20,
             ),
 
             // NASA GIBS Sea Surface Temperature Layer
@@ -456,6 +459,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   transparent: true,
                   format: 'image/png32',
                 ),
+                maxNativeZoom: 18,
+                maxZoom: 20,
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
               ),
@@ -467,12 +472,16 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   baseUrl: MapLayerConfig.gebcoWmsUrl,
                   layers: [MapLayerConfig.gebcoLayerName],
                 ),
+                maxNativeZoom: 18,
+                maxZoom: 20,
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
               ),
               TileLayer(
                 urlTemplate: MapLayerConfig.openSeaMapTileUrl,
                 userAgentPackageName: 'com.onerevamp.seabound',
+                maxNativeZoom: 18,
+                maxZoom: 20,
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.8),
               ),
             ],
@@ -486,6 +495,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   transparent: true,
                   format: 'image/png',
                 ),
+                maxNativeZoom: 18,
+                maxZoom: 20,
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.85),
               ),
@@ -506,6 +517,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     tileSize: 512,
                     zoomOffset: -1,
                     maxNativeZoom: 12,
+                    maxZoom: 20,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
                   );

@@ -72,21 +72,34 @@ class WindService {
 
     if (kIsWeb) {
       // On Flutter Web, browser CORS blocks direct requests to NOAA NDBC.
-      // Fetch via CORS proxy directly to prevent browser CORS console errors.
-      try {
-        response = await _client.get(Uri.parse(proxyUrl));
+      // Try a resilient fallback proxy chain to avoid timeouts or CORS blocks.
+      final targetUrl = MapLayerConfig.noaaNdbcLatestObsUrl;
+      final encodedTarget = Uri.encodeComponent(targetUrl);
+
+      final proxies = [
+        'https://corsproxy.io/?$encodedTarget',
+        'https://api.codetabs.com/v1/proxy?quest=$encodedTarget',
+        'https://api.allorigins.win/raw?url=$encodedTarget',
+      ];
+
+      http.Response? webResponse;
+      for (final proxy in proxies) {
+        try {
+          final res = await _client.get(Uri.parse(proxy)).timeout(const Duration(seconds: 4));
+          if (res.statusCode == 200 && res.body.trim().isNotEmpty) {
+            webResponse = res;
+            break;
+          }
+        } catch (_) {}
+      }
+
+      if (webResponse != null) {
+        response = webResponse;
+      } else {
+        // Final fallback to direct fetch
+        response = await _client.get(Uri.parse(targetUrl));
         if (response.statusCode != 200) {
-          throw Exception('Proxy status ${response.statusCode}');
-        }
-      } catch (_) {
-        // Fallback to direct request if proxy fails
-        response = await _client.get(
-          Uri.parse(MapLayerConfig.noaaNdbcLatestObsUrl),
-        );
-        if (response.statusCode != 200) {
-          throw Exception(
-            'Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})',
-          );
+          throw Exception('Failed to load NOAA NDBC buoy observations (code: ${response.statusCode})');
         }
       }
     } else {

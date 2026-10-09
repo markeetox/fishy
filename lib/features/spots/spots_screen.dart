@@ -23,6 +23,7 @@ import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
 import '../map_layers/waves_provider.dart';
 import '../map_layers/waves_service.dart';
+import '../map_layers/weather_radar_service.dart';
 import '../map_layers/weather_time_provider.dart';
 import '../map_layers/wind_provider.dart';
 import '../map_layers/wind_service.dart';
@@ -324,6 +325,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final showDepth = activeLayers.contains(MapLayerConfig.depthBathymetryId);
     final showSoundings = activeLayers.contains(MapLayerConfig.depthNumbersId);
     final showRadar = activeLayers.contains(MapLayerConfig.weatherRadarId);
+    final radarDataAsync = showRadar ? ref.watch(radarFramesProvider) : null;
     final showFishSpots = activeLayers.contains('fish_spots');
     final showWindObs = activeLayers.contains(MapLayerConfig.windObsId);
 
@@ -488,17 +490,46 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.85),
               ),
 
-            // Weather Radar WMS Layer
-            if (showRadar)
-              TileLayer(
-                wmsOptions: WMSTileLayerOptions(
-                  baseUrl: MapLayerConfig.noaaNowCoastRadarWmsUrl,
-                  layers: [MapLayerConfig.noaaRadarLayerName],
-                  transparent: true,
-                  format: 'image/png',
+            // Weather Radar Layer with Smoothed Contours & Nowcast Time Synchronization
+            if (showRadar && radarDataAsync != null)
+              radarDataAsync.when(
+                data: (radarResp) {
+                  final tileUrl = radarResp.getTileUrlForOffset(
+                    weatherTime.hourOffset,
+                    tileSize: 512,
+                    smooth: true,
+                  );
+                  if (tileUrl == null) return const SizedBox.shrink();
+
+                  return TileLayer(
+                    urlTemplate: tileUrl,
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    maxNativeZoom: 12,
+                    tileProvider: NetworkTileProvider(),
+                    tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
+                  );
+                },
+                loading: () => TileLayer(
+                  wmsOptions: WMSTileLayerOptions(
+                    baseUrl: MapLayerConfig.noaaNowCoastRadarWmsUrl,
+                    layers: [MapLayerConfig.noaaRadarLayerName],
+                    transparent: true,
+                    format: 'image/png',
+                  ),
+                  tileProvider: NetworkTileProvider(),
+                  tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
                 ),
-                tileProvider: NetworkTileProvider(),
-                tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
+                error: (e, st) => TileLayer(
+                  wmsOptions: WMSTileLayerOptions(
+                    baseUrl: MapLayerConfig.noaaNowCoastRadarWmsUrl,
+                    layers: [MapLayerConfig.noaaRadarLayerName],
+                    transparent: true,
+                    format: 'image/png',
+                  ),
+                  tileProvider: NetworkTileProvider(),
+                  tileDisplay: const TileDisplay.instantaneous(opacity: 0.6),
+                ),
               ),
 
             // FWC Artificial Reefs Marker Layer

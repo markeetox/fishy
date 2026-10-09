@@ -23,6 +23,7 @@ import '../map_layers/tide_providers.dart';
 import '../map_layers/tide_service.dart';
 import '../map_layers/waves_provider.dart';
 import '../map_layers/waves_service.dart';
+import '../map_layers/weather_time_provider.dart';
 import '../map_layers/wind_provider.dart';
 import '../map_layers/wind_service.dart';
 import '../profile/badge_service.dart';
@@ -308,7 +309,8 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
     final tideStationsAsync = ref.watch(tideStationsProvider);
     final userPositionAsync = ref.watch(userPositionStreamProvider);
     final alertsState = ref.watch(alertsNotifierProvider);
-    final waveHourOffset = ref.watch(selectedWaveHourOffsetProvider);
+    final weatherTime = ref.watch(weatherTimeProvider);
+    final waveHourOffset = weatherTime.hourOffset;
 
     final sstDateAsync = ref.watch(sstDateProvider);
     final chlorophyllDateAsync = ref.watch(chlorophyllDateProvider);
@@ -1293,37 +1295,96 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ),
         ),
 
-        // Waves Time Control Widget Bar (Now, +3h, +6h, +12h, +24h)
-        if (showWaves)
+        // UNIFIED WEATHER FORECAST & TIME CONTROL BAR
+        if (showWaves || showRadar || showWindObs)
           Positioned(
             bottom: 110,
             left: 16,
             right: 16,
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: OceanThemeExtension.defaultTokens.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white24, width: 2),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Timestamp & Mode Indicator Pill
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: weatherTime.isLive
+                          ? const Color(0xFF00E5FF).withValues(alpha: 0.95)
+                          : const Color(0xFFFF9100).withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black38,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _WaveTimeButton(label: 'Now', offset: 0),
-                    _WaveTimeButton(label: '+3h', offset: 3),
-                    _WaveTimeButton(label: '+6h', offset: 6),
-                    _WaveTimeButton(label: '+12h', offset: 12),
-                    _WaveTimeButton(label: '+24h', offset: 24),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          weatherTime.isLive ? Icons.sensors : Icons.schedule,
+                          size: 14,
+                          color: Colors.black,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          weatherTime.isLive
+                              ? 'LIVE OBS • ${DateFormat.jm().format(weatherTime.validTime)}'
+                              : 'FORECAST +${weatherTime.hourOffset}h • ${DateFormat.yMMMd().add_jm().format(weatherTime.validTime)}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        if (showRadar && !weatherTime.isLive) ...[
+                          const SizedBox(width: 6),
+                          const Text(
+                            '(Radar Live Only)',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 9,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Time Step Controls
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: OceanThemeExtension.defaultTokens.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white24, width: 2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _WeatherTimeButton(label: 'Now', offset: 0),
+                        _WeatherTimeButton(label: '+1h', offset: 1),
+                        _WeatherTimeButton(label: '+3h', offset: 3),
+                        _WeatherTimeButton(label: '+6h', offset: 6),
+                        _WeatherTimeButton(label: '+12h', offset: 12),
+                        _WeatherTimeButton(label: '+24h', offset: 24),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1586,16 +1647,16 @@ class _LegendBox extends StatelessWidget {
   }
 }
 
-class _WaveTimeButton extends ConsumerWidget {
+class _WeatherTimeButton extends ConsumerWidget {
   final String label;
   final int offset;
 
-  const _WaveTimeButton({required this.label, required this.offset});
+  const _WeatherTimeButton({required this.label, required this.offset});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentOffset = ref.watch(selectedWaveHourOffsetProvider);
-    final isSelected = currentOffset == offset;
+    final weatherTime = ref.watch(weatherTimeProvider);
+    final isSelected = weatherTime.hourOffset == offset;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2.0),
@@ -1603,12 +1664,13 @@ class _WaveTimeButton extends ConsumerWidget {
         label: Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
           ),
         ),
         selected: isSelected,
         onSelected: (_) {
+          ref.read(weatherTimeProvider.notifier).setHourOffset(offset);
           ref.read(selectedWaveHourOffsetProvider.notifier).setHourOffset(offset);
         },
         visualDensity: VisualDensity.compact,

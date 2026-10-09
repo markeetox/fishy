@@ -50,10 +50,10 @@ class MapLayerConfig {
   static const String gibsSstLayerIdentifier =
       'GHRSST_L4_MUR_Sea_Surface_Temperature';
   static const String gibsChlorophyllLayerIdentifier =
-      'VIIRS_SNPP_Chlorophyll_A';
+      'VIIRS_SNPP_L2_Chlorophyll_A';
 
-  static const String gibsSstTileMatrixSet = '1km';
-  static const String gibsChlorophyllTileMatrixSet = '1km';
+  static const String gibsSstTileMatrixSet = 'GoogleMapsCompatible_Level7';
+  static const String gibsChlorophyllTileMatrixSet = 'GoogleMapsCompatible_Level7';
 
   static const String gibsSstLegendUrl =
       'https://gibs.earthdata.nasa.gov/legends/GHRSST_MUR_SST_V.png';

@@ -418,7 +418,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   return TileLayer(
                     urlTemplate: tileUrl,
                     userAgentPackageName: 'com.onerevamp.seabound',
-                    maxNativeZoom: 8,
+                    maxNativeZoom: 7,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
                   );
@@ -440,7 +440,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                   return TileLayer(
                     urlTemplate: tileUrl,
                     userAgentPackageName: 'com.onerevamp.seabound',
-                    maxNativeZoom: 8,
+                    maxNativeZoom: 7,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
                   );

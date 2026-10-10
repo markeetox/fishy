@@ -51,6 +51,23 @@ class TripsRepository {
     });
   }
 
+  Stream<List<Trip>> getSharedTripsStream(String userId) {
+    return _tripsRef
+        .where('sharedWith', arrayContains: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Trip.fromMap(doc.data(), doc.id);
+      }).toList();
+    });
+  }
+
+  Future<void> updateTripSharing(String tripId, List<String> friendUids) async {
+    await _tripsRef.doc(tripId).update({
+      'sharedWith': friendUids,
+    });
+  }
+
   Future<void> deleteTrip(String tripId) async {
     await _tripsRef.doc(tripId).delete();
   }

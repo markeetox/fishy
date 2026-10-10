@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/app_theme.dart';
 import '../../core/floating_top_bar.dart';
 import '../../core/gradient_background.dart';
+import '../auth/auth_providers.dart';
 import 'badge_pin.dart';
 import 'catalog.dart';
 import 'profile_providers.dart';
@@ -160,6 +161,76 @@ class PublicProfileScreen extends ConsumerWidget {
                                       OceanThemeExtension.defaultTokens.cyan,
                                   fontWeight: FontWeight.w800,
                                 ),
+                          ),
+                          const SizedBox(height: 16),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final authUser = ref.watch(authStateProvider).asData?.value;
+                              if (authUser == null || authUser.uid == userId) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final currentUserDoc = ref.watch(userDocStreamProvider).asData?.value;
+                              final currentUsername = currentUserDoc?['username'] as String? ?? 'Captain';
+                              final currentAvatarId = currentUserDoc?['avatarId'] as String?;
+
+                              final isFriendAsync = ref.watch(isFriendStreamProvider(userId));
+                              final isFriend = isFriendAsync.asData?.value ?? false;
+
+                              return OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: isFriend ? Colors.white70 : OceanThemeExtension.defaultTokens.cyan,
+                                  side: BorderSide(
+                                    color: isFriend ? Colors.white38 : OceanThemeExtension.defaultTokens.cyan,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  final repo = ref.read(friendsRepositoryProvider);
+                                  if (isFriend) {
+                                    await repo.removeFriend(
+                                      currentUid: authUser.uid,
+                                      targetUid: userId,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Removed $username from friends.'),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    await repo.addFriend(
+                                      currentUid: authUser.uid,
+                                      targetUid: userId,
+                                      targetUsername: username,
+                                      targetAvatarId: avatarId,
+                                      currentUsername: currentUsername,
+                                      currentAvatarId: currentAvatarId,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Added $username as a friend!'),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                icon: Icon(
+                                  isFriend ? Icons.person_remove_outlined : Icons.person_add_outlined,
+                                ),
+                                label: Text(
+                                  isFriend ? 'Remove Friend' : 'Add Friend',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              );
+                            },
                           ),
                           const Divider(height: 40, color: Colors.white30),
                           Align(

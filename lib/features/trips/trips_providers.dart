@@ -18,6 +18,16 @@ final userTripsStreamProvider = StreamProvider<List<Trip>>((ref) {
   return repository.getUserTripsStream(user.uid);
 });
 
+final sharedTripsStreamProvider = StreamProvider<List<Trip>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final user = authState.asData?.value;
+  if (user == null) {
+    return Stream.value([]);
+  }
+  final repository = ref.watch(tripsRepositoryProvider);
+  return repository.getSharedTripsStream(user.uid);
+});
+
 final tripDetailStreamProvider =
     StreamProvider.family<Trip?, String>((ref, tripId) {
   final repository = ref.watch(tripsRepositoryProvider);

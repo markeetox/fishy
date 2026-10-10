@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/gradient_background.dart';
+import '../profile/profile_providers.dart';
+import 'trip_model.dart';
 import 'trips_providers.dart';
 
 class TripDetailScreen extends ConsumerWidget {
@@ -45,6 +48,17 @@ class TripDetailScreen extends ConsumerWidget {
     }
   }
 
+  void _showShareSheet(BuildContext context, Trip trip) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => _ShareTripSheet(trip: trip),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripDetailAsync = ref.watch(tripDetailStreamProvider(tripId));
@@ -60,13 +74,25 @@ class TripDetailScreen extends ConsumerWidget {
               if (trip == null) return const SizedBox.shrink();
               return PopupMenuButton<String>(
                 onSelected: (value) {
-                  if (value == 'edit') {
+                  if (value == 'share') {
+                    _showShareSheet(context, trip);
+                  } else if (value == 'edit') {
                     context.push('/trips/$tripId/edit');
                   } else if (value == 'delete') {
                     _confirmDelete(context, ref, trip.title);
                   }
                 },
                 itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        Icon(Icons.share_outlined),
+                        SizedBox(width: 8),
+                        Text('Share with Friends'),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: 'edit',
                     child: Row(
@@ -195,26 +221,20 @@ class TripDetailScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              context.push('/trips/$tripId/edit');
-                            },
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Edit Trip'),
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showShareSheet(context, trip),
+                            icon: const Icon(Icons.share),
+                            label: const Text('Share Trip'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Theme.of(context).colorScheme.error,
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                            onPressed: () => _confirmDelete(context, ref, trip.title),
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Delete Trip'),
+                            onPressed: () {
+                              context.push('/trips/$tripId/edit');
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Edit'),
                           ),
                         ),
                       ],
@@ -229,6 +249,164 @@ class TripDetailScreen extends ConsumerWidget {
         error: (e, st) => Center(child: Text('Error loading trip: $e')),
       ),
     ),
+    );
+  }
+}
+
+class _ShareTripSheet extends ConsumerStatefulWidget {
+  final Trip trip;
+
+  const _ShareTripSheet({required this.trip});
+
+  @override
+  ConsumerState<_ShareTripSheet> createState() => _ShareTripSheetState();
+}
+
+class _ShareTripSheetState extends ConsumerState<_ShareTripSheet> {
+  late Set<String> _selectedFriendUids;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedFriendUids = Set.from(widget.trip.sharedWith);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final friendsAsync = ref.watch(userFriendsStreamProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Share Trip with Friends',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select friends who can view this trip details:',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            friendsAsync.when(
+              data: (friends) {
+                if (friends.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 48,
+                            color: OceanThemeExtension.defaultTokens.cyan.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'You have not added any friends yet.\nVisit a user profile to add friends!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: friends.length,
+                    itemBuilder: (context, index) {
+                      final friend = friends[index];
+                      final isChecked = _selectedFriendUids.contains(friend.uid);
+
+                      return CheckboxListTile(
+                        value: isChecked,
+                        onChanged: (bool? val) {
+                          setState(() {
+                            if (val == true) {
+                              _selectedFriendUids.add(friend.uid);
+                            } else {
+                              _selectedFriendUids.remove(friend.uid);
+                            }
+                          });
+                        },
+                        secondary: CircleAvatar(
+                          backgroundColor: OceanThemeExtension.defaultTokens.surface,
+                          child: friend.avatarId != null && friend.avatarId!.isNotEmpty
+                              ? Image.asset(
+                                  'assets/avatars/${friend.avatarId}.png',
+                                  errorBuilder: (_, _, _) => const Icon(Icons.person, color: Colors.white),
+                                )
+                              : const Icon(Icons.person, color: Colors.white),
+                        ),
+                        title: Text(
+                          friend.username,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Text('Error loading friends: $e'),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isSaving = true;
+                        });
+                        final repo = ref.read(tripsRepositoryProvider);
+                        final messenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(context);
+                        await repo.updateTripSharing(widget.trip.id, _selectedFriendUids.toList());
+                        if (mounted) {
+                          navigator.pop();
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('Trip sharing settings updated!'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check),
+                label: const Text('Save Sharing'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

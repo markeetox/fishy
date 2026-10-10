@@ -404,6 +404,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               userAgentPackageName: 'com.onerevamp.seabound',
               maxNativeZoom: 19,
               maxZoom: 20,
+              errorTileCallback: (_, __, ___) {},
             ),
 
             // NASA GIBS Sea Surface Temperature Layer
@@ -421,6 +422,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     maxNativeZoom: 7,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
+                    errorTileCallback: (_, __, ___) {},
                   );
                 },
                 loading: () => const SizedBox.shrink(),
@@ -443,6 +445,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     maxNativeZoom: 7,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
+                    errorTileCallback: (_, __, ___) {},
                   );
                 },
                 loading: () => const SizedBox.shrink(),
@@ -461,6 +464,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 maxZoom: 20,
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.7),
+                errorTileCallback: (_, __, ___) {},
               ),
               TileLayer(
                 urlTemplate: MapLayerConfig.openSeaMapTileUrl,
@@ -468,6 +472,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 maxNativeZoom: 18,
                 maxZoom: 20,
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.8),
+                errorTileCallback: (_, __, ___) {},
               ),
             ],
 
@@ -484,6 +489,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 maxZoom: 20,
                 tileProvider: NetworkTileProvider(),
                 tileDisplay: const TileDisplay.instantaneous(opacity: 0.85),
+                errorTileCallback: (_, __, ___) {},
               ),
 
             // Weather Radar Layer with Smoothed Contours & Nowcast Time Synchronization
@@ -505,6 +511,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                     maxZoom: 20,
                     tileProvider: NetworkTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(opacity: 0.65),
+                    errorTileCallback: (_, __, ___) {},
                   );
                 },
                 loading: () => TileLayer(
@@ -1252,6 +1259,46 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                               color: Colors.white, size: 16),
                         ],
                       ),
+                    ),
+                  ),
+                ],
+
+                // Map Zoom Level Warning Banner
+                if (_currentZoom > 18.0) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade900,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.zoom_out,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Max zoom level reached. Tile detail limited at this zoom.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

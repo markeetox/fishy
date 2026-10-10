@@ -8,6 +8,7 @@ class Trip {
   final String locationName;
   final List<String> species;
   final String notes;
+  final List<String> sharedWith;
   final DateTime? createdAt;
 
   const Trip({
@@ -18,6 +19,7 @@ class Trip {
     required this.locationName,
     required this.species,
     required this.notes,
+    this.sharedWith = const [],
     this.createdAt,
   });
 
@@ -44,6 +46,10 @@ class Trip {
               .toList() ??
           const [],
       notes: map['notes'] as String? ?? '',
+      sharedWith: (map['sharedWith'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       createdAt: map['createdAt'] != null ? parseDateTime(map['createdAt']) : null,
     );
   }
@@ -56,6 +62,7 @@ class Trip {
       'locationName': locationName,
       'species': species,
       'notes': notes,
+      'sharedWith': sharedWith,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
@@ -68,6 +75,7 @@ class Trip {
     String? locationName,
     List<String>? species,
     String? notes,
+    List<String>? sharedWith,
     DateTime? createdAt,
   }) {
     return Trip(
@@ -78,6 +86,7 @@ class Trip {
       locationName: locationName ?? this.locationName,
       species: species ?? this.species,
       notes: notes ?? this.notes,
+      sharedWith: sharedWith ?? this.sharedWith,
       createdAt: createdAt ?? this.createdAt,
     );
   }

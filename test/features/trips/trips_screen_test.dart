@@ -16,7 +16,9 @@ void main() {
       ],
     );
 
-    expect(find.text('My Fishing Trips'), findsOneWidget);
+    expect(find.text('Fishing Trips'), findsOneWidget);
+    expect(find.text('My Trips'), findsOneWidget);
+    expect(find.text('Shared with Me'), findsOneWidget);
     expect(find.text('No Trips Logged Yet'), findsOneWidget);
     expect(
       find.text('Start logging your fishing adventures, catches, and secret spots!'),

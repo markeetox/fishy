@@ -9,12 +9,23 @@ import '../../core/gradient_background.dart';
 import 'trip_model.dart';
 import 'trips_providers.dart';
 
-class TripsScreen extends ConsumerWidget {
+enum _TripTab { myTrips, sharedWithMe }
+
+class TripsScreen extends ConsumerStatefulWidget {
   const TripsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tripsAsync = ref.watch(userTripsStreamProvider);
+  ConsumerState<TripsScreen> createState() => _TripsScreenState();
+}
+
+class _TripsScreenState extends ConsumerState<TripsScreen> {
+  _TripTab _selectedTab = _TripTab.myTrips;
+
+  @override
+  Widget build(BuildContext context) {
+    final tripsAsync = _selectedTab == _TripTab.myTrips
+        ? ref.watch(userTripsStreamProvider)
+        : ref.watch(sharedTripsStreamProvider);
 
     return GradientBackground.blue(
       child: Scaffold(
@@ -32,12 +43,35 @@ class TripsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'My Fishing Trips',
+                          'Fishing Trips',
                           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                               ),
                         ),
                         const SizedBox(height: 16),
+                        Center(
+                          child: SegmentedButton<_TripTab>(
+                            segments: const [
+                              ButtonSegment(
+                                value: _TripTab.myTrips,
+                                label: Text('My Trips'),
+                                icon: Icon(Icons.directions_boat),
+                              ),
+                              ButtonSegment(
+                                value: _TripTab.sharedWithMe,
+                                label: Text('Shared with Me'),
+                                icon: Icon(Icons.people),
+                              ),
+                            ],
+                            selected: {_selectedTab},
+                            onSelectionChanged: (Set<_TripTab> newSelection) {
+                              setState(() {
+                                _selectedTab = newSelection.first;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         tripsAsync.when(
                           data: (trips) {
                             if (trips.isEmpty) {

@@ -1,7 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
+import 'friends_repository.dart';
 import 'profile_repository.dart';
+
+final friendsRepositoryProvider = Provider<FriendsRepository>((ref) {
+  return FriendsRepository();
+});
+
+final userFriendsStreamProvider = StreamProvider<List<FriendInfo>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final user = authState.asData?.value;
+  if (user == null) {
+    return Stream.value([]);
+  }
+  final repo = ref.watch(friendsRepositoryProvider);
+  return repo.streamFriends(user.uid);
+});
+
+final isFriendStreamProvider = StreamProvider.family<bool, String>((ref, targetUid) {
+  final authState = ref.watch(authStateProvider);
+  final user = authState.asData?.value;
+  if (user == null || user.uid == targetUid) {
+    return Stream.value(false);
+  }
+  final repo = ref.watch(friendsRepositoryProvider);
+  return repo.streamIsFriend(currentUid: user.uid, targetUid: targetUid);
+});
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository();

@@ -3,10 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'avatarId', 'createdAt']);
-      allow update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'avatarId', 'createdAt']);
+      allow create, update: if request.auth != null && request.auth.uid == userId;
 
       match /badges/{badgeId} {
         allow read: if request.auth != null;

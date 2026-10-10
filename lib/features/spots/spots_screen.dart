@@ -813,7 +813,7 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
           ],
         ),
 
-        // TOP-RIGHT CONTROLS OVERLAY: Layers and Location Controls
+        // TOP-RIGHT CONTROLS OVERLAY: Layers, Location, and Add Pointer Controls with Chrome Gradient Border
         Positioned(
           top: 8,
           right: 16,
@@ -823,54 +823,51 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Layers Button
-                Tooltip(
-                  message: 'Layers',
-                  child: InkWell(
-                    onTap: _openLayersDialog,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: OceanThemeExtension.defaultTokens.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: OceanThemeExtension.defaultTokens.cyan,
-                          width: 2,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black45,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(Icons.layers_outlined, size: 22, color: Colors.white),
-                          if (activeCount > 0)
-                            Positioned(
-                              top: 2,
-                              right: 2,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF00E5FF),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  '$activeCount',
-                                  style: const TextStyle(
-                                    color: Color(0xFF001018),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
+                ChromeBorderContainer(
+                  borderRadius: BorderRadius.circular(24),
+                  borderWidth: 2,
+                  backgroundColor: OceanThemeExtension.defaultTokens.surface,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black45,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  child: Tooltip(
+                    message: 'Layers',
+                    child: InkWell(
+                      onTap: _openLayersDialog,
+                      borderRadius: BorderRadius.circular(22),
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(Icons.layers_outlined, size: 22, color: Colors.white),
+                            if (activeCount > 0)
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF00E5FF),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$activeCount',
+                                    style: const TextStyle(
+                                      color: Color(0xFF001018),
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -878,37 +875,65 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
                 const SizedBox(height: 8),
 
                 // My Location Button
-                Tooltip(
-                  message: 'My Location',
-                  child: InkWell(
-                    onTap: _isLocating ? null : _centerOnMyLocation,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: OceanThemeExtension.defaultTokens.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: OceanThemeExtension.defaultTokens.cyan,
-                          width: 2,
+                ChromeBorderContainer(
+                  borderRadius: BorderRadius.circular(24),
+                  borderWidth: 2,
+                  backgroundColor: OceanThemeExtension.defaultTokens.surface,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black45,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  child: Tooltip(
+                    message: 'My Location',
+                    child: InkWell(
+                      onTap: _isLocating ? null : _centerOnMyLocation,
+                      borderRadius: BorderRadius.circular(22),
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(
+                          child: _isLocating
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.my_location, size: 22, color: Colors.white),
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black45,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
                       ),
-                      child: Center(
-                        child: _isLocating
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location, size: 22, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Add Pointer / Add Opinion Button
+                ChromeBorderContainer(
+                  borderRadius: BorderRadius.circular(24),
+                  borderWidth: 2,
+                  backgroundColor: const Color(0xFFD1142A),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black45,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  child: Tooltip(
+                    message: 'Add Opinion',
+                    child: InkWell(
+                      onTap: () {
+                        context.push('/spots/add');
+                      },
+                      borderRadius: BorderRadius.circular(22),
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(
+                          child: Icon(Icons.add_location_alt, size: 22, color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
@@ -1390,74 +1415,27 @@ class _SpotsMapViewState extends ConsumerState<_SpotsMapView> {
             ),
           ),
 
-        // POINTER FAB & ATTRIBUTION AT BOTTOM-LEFT
+        // Merged Copyright & Not For Navigation Disclaimer Pill along bottom edge
         Positioned(
-          bottom: 26,
+          bottom: 4,
           left: 16,
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Tooltip(
-                  message: 'Add Opinion',
-                  child: FloatingActionButton(
-                    heroTag: 'add_pin_fab',
-                    backgroundColor: const Color(0xFFD1142A),
-                    foregroundColor: Colors.white,
-                    shape: const CircleBorder(
-                      side: BorderSide(color: Colors.white, width: 3),
-                    ),
-                    elevation: 6,
-                    onPressed: () {
-                      context.push('/spots/add');
-                    },
-                    child: const Icon(Icons.add_location_alt, size: 26, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                // Map Attribution under Pointer FAB
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    '© OpenStreetMap, NOAA & FWC',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Compact Unobtrusive Disclaimer Banner along bottom edge
-        Positioned(
-          bottom: 2,
-          left: 0,
-          right: 0,
+          right: 16,
           child: Center(
             child: GestureDetector(
               onTap: () => NavigationDisclaimer.showFullDisclaimerDialog(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
+                  color: Colors.black.withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'Not for navigation. Tap for details.',
+                  '© OpenStreetMap, NOAA & FWC • Not for navigation. Tap for details.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

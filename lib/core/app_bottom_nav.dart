@@ -244,7 +244,7 @@ class _AppBottomNavState extends State<AppBottomNav>
                 child: AnimatedBuilder(
                   animation: _expandAnimation,
                   builder: (context, child) {
-                    final size = 88.0 + (_expandAnimation.value * 280.0);
+                    final size = (88.0 + (_expandAnimation.value * 280.0)) * 0.80;
                     return Transform.translate(
                       offset: Offset(0, size * 0.40),
                       child: Container(
@@ -293,6 +293,24 @@ class _AppBottomNavState extends State<AppBottomNav>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        ChromeBorderContainer(
+                          borderRadius: BorderRadius.circular(8),
+                          borderWidth: 1.5,
+                          backgroundColor: const Color(0xFF0B2250).withValues(alpha: 0.9),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            item.label,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: isSelected ? tokens.cyan : Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
                         Container(
                           width: 56,
                           height: 56,
@@ -353,24 +371,6 @@ class _AppBottomNavState extends State<AppBottomNav>
                                   ],
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        ChromeBorderContainer(
-                          borderRadius: BorderRadius.circular(8),
-                          borderWidth: 1.5,
-                          backgroundColor: const Color(0xFF0B2250).withValues(alpha: 0.9),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          child: Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: isSelected ? tokens.cyan : Colors.white,
                             ),
                           ),
                         ),
